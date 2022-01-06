@@ -92,7 +92,7 @@ class Pin(object):
                 self._pin = self.dict()[pin]
             except Exception as e:
                 print(e)
-                self._error('Pin should be in %s, not %s' % (self._dict.keys(), pin))
+                #self._error('Pin should be in %s, not %s' % (self._dict.keys(), pin))
         elif isinstance(pin, int):
             self._pin = pin
         else:
@@ -112,10 +112,11 @@ class Pin(object):
     def init(self, mode, pull=PULL_NONE):
         self._pull = pull
         self._mode = mode
-        if mode != None:
-            if pull != None:
+        pass
+        #if mode != None:
+            #if pull != None:
                 #GPIO.setup(self._pin, mode, pull_up_down=pull)
-            else:
+            #else:
                 #GPIO.setup(self._pin, mode)
 
     def dict(self, *_dict):

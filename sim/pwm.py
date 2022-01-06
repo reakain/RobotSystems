@@ -1,5 +1,4 @@
-import smbus, math
-from i2c import I2C
+import math
 
 timer = [
     {
@@ -7,7 +6,7 @@ timer = [
     }
 ] * 4
 
-class PWM(I2C):
+class PWM():
     REG_CHN = 0x20
     REG_FRE = 0x30
     REG_PSC = 0x40
@@ -42,11 +41,11 @@ class PWM(I2C):
         self.freq(50)
 
     def i2c_write(self, reg, value):
-        pass
+        
         value_h = value >> 8
         value_l = value & 0xff
         # self._debug("i2c write: [0x%02X, 0x%02X, 0x%02X, 0x%02X]"%(self.ADDR, reg, value_h, value_l))
-        self.send([reg, value_h, value_l], self.ADDR)
+        #self.send([reg, value_h, value_l], self.ADDR)
 
     def freq(self, *freq):
         if len(freq) == 0:

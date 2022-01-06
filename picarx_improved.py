@@ -1,19 +1,27 @@
 import time
+import logging
+#from logdecorator import log_on_start, log_on_end, log_on_error
+logging_format = "%(asctime)s: %(message)s"
+logging.basicConfig(format = logging_format, level = logging.INFO,
+datefmt ="%H:%M:%S")
+logging.getLogger().setLevel(logging.DEBUG)
 try :
     from lib.servo import Servo
     from lib.pwm import PWM
     from lib.pin import Pin
     from lib.adc import ADC
-    from lib.fildb import fileDB
+    from lib.filedb import fileDB
+    FILEDBNNAME = '/home/pi/.config'
     __reset_mcu__ ()
     time.sleep (0.01)
 except ImportError :
-    print (" This computer does not appear to be a PiCar - X system( ezblock is not present ) . Shadowing hardware calls withsubstitute functions ")
+    logging.info("This computer does not appear to be a PiCar - X system (ezblock is not present). Shadowing hardware calls with substitute functions ")
     from sim.servo import Servo
     from sim.pwm import PWM
     from sim.pin import Pin
     from sim.adc import ADC
-    from sim.fildb import fileDB
+    from sim.filedb import fileDB
+    FILEDBNNAME = None
     #from sim_ezblock import *
 
 
@@ -28,7 +36,7 @@ class Picarx(object):
         self.camera_servo_pin1 = Servo(PWM('P0'))
         self.camera_servo_pin2 = Servo(PWM('P1'))
         # TODO: Figure what this shit it out
-        self.config_flie = fileDB('/home/pi/.config')
+        self.config_flie = fileDB(FILEDBNNAME)
         self.dir_cal_value = int(self.config_flie.get("picarx_dir_servo", default_value=0))
         self.cam_cal_value_1 = int(self.config_flie.get("picarx_cam1_servo", default_value=0))
         self.cam_cal_value_2 = int(self.config_flie.get("picarx_cam2_servo", default_value=0))
@@ -100,7 +108,7 @@ class Picarx(object):
     def dir_servo_angle_calibration(self,value):
         # global dir_cal_value
         self.dir_cal_value = value
-        print("calibrationdir_cal_value:",self.dir_cal_value)
+        logging.debug("calibrationdir_cal_value:",self.dir_cal_value)
         self.config_flie.set("picarx_dir_servo", "%s"%value)
         self.dir_servo_pin.angle(value)
 
@@ -108,7 +116,7 @@ class Picarx(object):
         # global dir_cal_value
         self.dir_current_angle = value
         angle_value  = value + self.dir_cal_value
-        print("angle_value:",angle_value)
+        logging.debug("angle_value:",angle_value)
         # print("set_dir_servo_angle_1:",angle_value)
         # print("set_dir_servo_angle_2:",dir_cal_value)
         self.dir_servo_pin.angle(angle_value)
@@ -117,14 +125,14 @@ class Picarx(object):
         # global cam_cal_value_1
         self.cam_cal_value_1 = value
         self.config_flie.set("picarx_cam1_servo", "%s"%value)
-        print("cam_cal_value_1:",self.cam_cal_value_1)
+        logging.debug("cam_cal_value_1:",self.cam_cal_value_1)
         self.camera_servo_pin1.angle(value)
 
     def camera_servo2_angle_calibration(self,value):
         # global cam_cal_value_2
         self.cam_cal_value_2 = value
         self.config_flie.set("picarx_cam2_servo", "%s"%value)
-        print("picarx_cam2_servo:",self.cam_cal_value_2)
+        logging.debug("picarx_cam2_servo:",self.cam_cal_value_2)
         self.camera_servo_pin2.angle(value)
 
     def set_camera_servo1_angle(self,value):
@@ -158,7 +166,7 @@ class Picarx(object):
             if abs_current_angle > 40:
                 abs_current_angle = 40
             power_scale = (100 - abs_current_angle) / 100.0 
-            print("power_scale:",power_scale)
+            logging.debug("power_scale:",power_scale)
             if (current_angle / abs_current_angle) > 0:
                 self.set_motor_speed(1, -1*speed)
                 self.set_motor_speed(2, speed * power_scale)
@@ -177,7 +185,7 @@ class Picarx(object):
             if abs_current_angle > 40:
                 abs_current_angle = 40
             power_scale = (100 - abs_current_angle) / 100.0 
-            print("power_scale:",power_scale)
+            logging.debug("power_scale:",power_scale)
             if (current_angle / abs_current_angle) > 0:
                 self.set_motor_speed(1, speed)
                 self.set_motor_speed(2, -1*speed * power_scale)
