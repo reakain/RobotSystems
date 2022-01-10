@@ -1,6 +1,7 @@
 import time
 import logging
 from logdecorator import log_on_start, log_on_end, log_on_error
+import atexit
 logging_format = "%(asctime)s: %(message)s"
 logging.basicConfig(format = logging_format, level = logging.INFO,
 datefmt ="%H:%M:%S")
@@ -199,6 +200,7 @@ class Picarx(object):
             self.set_motor_speed(1, speed)
             self.set_motor_speed(2, -1*speed)                  
 
+    @atexit.register
     def stop(self):
         self.set_motor_speed(1, 0)
         self.set_motor_speed(2, 0)
@@ -229,6 +231,7 @@ class Picarx(object):
         cm = round(during * 340 / 2 * 100, 2)
         #print(cm)
         return cm
+
 
 
 if __name__ == "__main__":
