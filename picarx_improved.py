@@ -200,6 +200,13 @@ class Picarx(object):
             self.set_motor_speed(1, speed)
             self.set_motor_speed(2, -1*speed)                  
 
+    def drive(self, speed, angle):
+        self.set_dir_servo_angle(angle)
+        if speed >= 0:
+            self.forward(speed)
+        else:
+            self.backward(abs(speed))
+
     @atexit.register
     def stop(self):
         self.set_motor_speed(1, 0)
