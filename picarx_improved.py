@@ -1,6 +1,6 @@
 import time
 import logging
-#from logdecorator import log_on_start, log_on_end, log_on_error
+from logdecorator import log_on_start, log_on_end, log_on_error
 logging_format = "%(asctime)s: %(message)s"
 logging.basicConfig(format = logging_format, level = logging.INFO,
 datefmt ="%H:%M:%S")
@@ -31,6 +31,9 @@ class Picarx(object):
     PRESCALER = 10
     TIMEOUT = 0.02
 
+    @log_on_start(logging.DEBUG, "Initializing instance of picarx class")
+    @log_on_error(logging.DEBUG, "Picarx initialization failed with error inside")
+    @log_on_end(logging.DEBUG, "Completed picarx instance initialization.")
     def __init__(self):
         self.dir_servo_pin = Servo(PWM('P2'))
         self.camera_servo_pin1 = Servo(PWM('P0'))
@@ -75,8 +78,8 @@ class Picarx(object):
         elif speed < 0:
             direction = -1 * self.cali_dir_value[motor]
         speed = abs(speed)
-        if speed != 0:
-            speed = int(speed /2 ) + 50
+        #if speed != 0:
+        #    speed = int(speed /2 ) + 50
         speed = speed - self.cali_speed_value[motor]
         if direction < 0:
             self.motor_direction_pins[motor].high()
