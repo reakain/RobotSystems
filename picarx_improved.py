@@ -12,8 +12,9 @@ try :
     from car.pin import Pin
     from car.adc import ADC
     from car.filedb import fileDB
+    from car.utils import reset_mcu
     FILEDBNNAME = '/home/pi/.config'
-    __reset_mcu__ ()
+    reset_mcu()
     time.sleep (0.01)
 except ImportError :
     logging.info("This computer does not appear to be a PiCar - X system (ezblock is not present). Shadowing hardware calls with substitute functions ")
