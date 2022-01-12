@@ -7,11 +7,11 @@ logging.basicConfig(format = logging_format, level = logging.INFO,
 datefmt ="%H:%M:%S")
 logging.getLogger().setLevel(logging.DEBUG)
 try :
-    from lib.servo import Servo
-    from lib.pwm import PWM
-    from lib.pin import Pin
-    from lib.adc import ADC
-    from lib.filedb import fileDB
+    from car.servo import Servo
+    from car.pwm import PWM
+    from car.pin import Pin
+    from car.adc import ADC
+    from car.filedb import fileDB
     FILEDBNNAME = '/home/pi/.config'
     __reset_mcu__ ()
     time.sleep (0.01)
