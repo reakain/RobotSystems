@@ -223,7 +223,7 @@ class Picarx(object):
         self.drive(-speed, -angle)
         time.sleep(0.5)
         self.stop()
-        self.drive(speed, 10)
+        self.drive(speed, 5)
         time.sleep(0.25)
         self.stop()
         self.drive(speed, 0)
