@@ -1,3 +1,4 @@
+import sys
 import time
 import logging
 from logdecorator import log_on_start, log_on_end, log_on_error
@@ -7,16 +8,19 @@ logging.basicConfig(format = logging_format, level = logging.INFO,
 datefmt ="%H:%M:%S")
 logging.getLogger().setLevel(logging.DEBUG)
 try :
-    from car.servo import Servo
-    from car.pwm import PWM
-    from car.pin import Pin
-    from car.adc import ADC
-    from car.filedb import fileDB
-    from car.utils import reset_mcu
+    sys.path.append(r'/home/pi/picar-x/lib')
+    #from car.i2c import I2C
+    from servo import Servo
+    from pwm import PWM
+    from pin import Pin
+    from adc import ADC
+    from filedb import fileDB
+    from utils import reset_mcu
     FILEDBNNAME = '/home/pi/.config'
     reset_mcu()
     time.sleep (0.01)
-except ImportError :
+except ImportError as e :
+    logging.info(e)
     logging.info("This computer does not appear to be a PiCar - X system (ezblock is not present). Shadowing hardware calls with substitute functions ")
     from sim.servo import Servo
     from sim.pwm import PWM

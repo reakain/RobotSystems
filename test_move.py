@@ -50,7 +50,7 @@ def three_point_turn(initial = "left"):
 if __name__ == "__main__":
     try:
         px = Picarx()
-        px.drive(30,0)
+        px.drive(100,0)
         time.sleep(1)
         px.stop()
 
