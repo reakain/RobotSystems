@@ -212,9 +212,8 @@ class Picarx(object):
         else:
             self.backward(abs(speed))
     
-    def parallel_park(self, side = "left"):
+    def parallel_park(self, speed = 50, side = "left"):
         current_dir = 1
-        speed = 50
         angle = 45
         #if initial == "right":
         #    current_dir = -1
@@ -231,9 +230,8 @@ class Picarx(object):
         time.sleep(0.5)
         self.stop()
 
-    def three_point_turn(self, initial = "left"):
+    def three_point_turn(self, speed = 50, initial = "left"):
         current_dir = -1
-        speed = 50
         angle = 45
         if initial == "right":
             current_dir = 1

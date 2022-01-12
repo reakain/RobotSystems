@@ -51,16 +51,16 @@ def three_point_turn(initial = "left"):
 if __name__ == "__main__":
     try:
         px = Picarx()
-        logging.info("Driving straight")
-        px.drive(50,0)
-        time.sleep(1)
-        px.stop()
+        #logging.info("Driving straight")
+        #px.drive(50,0)
+        #time.sleep(1)
+        #px.stop()
 
         logging.info("Starting parallel park")
-        px.parallel_park()
+        px.parallel_park(100)
 
-        logging.info("Starting 3 point turn")
-        px.three_point_turn()
+        #logging.info("Starting 3 point turn")
+        #px.three_point_turn()
 
 
         # px.forward(30)
