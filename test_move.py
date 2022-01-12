@@ -1,6 +1,7 @@
 import sys
-#from sim.utils import reset_mcu
-#reset_mcu()
+sys.path.append(r'/home/pi/picar-x/lib')
+from utils import reset_mcu
+reset_mcu()
 
 from picarx_improved import Picarx
 import time
@@ -52,7 +53,7 @@ if __name__ == "__main__":
         px.drive(30,0)
         time.sleep(1)
         px.stop()
-        
+
         # px.forward(30)
         # time.sleep(0.5)
         # for angle in range(0,35):
