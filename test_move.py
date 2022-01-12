@@ -5,8 +5,9 @@ import sys
 
 from picarx_improved import Picarx
 import time
+import logging
 
-def parallel_parking(side = "left"):
+def parallel_parking(car, side = "left"):
     current_dir = 1
     speed = 100
     angle = 45
@@ -50,9 +51,17 @@ def three_point_turn(initial = "left"):
 if __name__ == "__main__":
     try:
         px = Picarx()
-        px.drive(100,0)
+        logging.info("Driving straight")
+        px.drive(50,0)
         time.sleep(1)
         px.stop()
+
+        logging.info("Starting parallel park")
+        px.parallel_park()
+
+        logging.info("Starting 3 point turn")
+        px.three_point_turn()
+
 
         # px.forward(30)
         # time.sleep(0.5)
