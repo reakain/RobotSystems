@@ -1,1 +1,4 @@
 logdecorator
+opencv-python
+numpy
+picamera

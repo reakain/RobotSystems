@@ -14,6 +14,7 @@ try :
     from pwm import PWM
     from pin import Pin
     from adc import ADC
+    from grayscale_module import Grayscale_Module
     from filedb import fileDB
     from utils import reset_mcu
     FILEDBNNAME = '/home/pi/.config'
@@ -26,6 +27,7 @@ except ImportError as e :
     from sim.pwm import PWM
     from sim.pin import Pin
     from sim.adc import ADC
+    from sim.grayscale_module import Grayscale_Module
     from sim.filedb import fileDB
     FILEDBNNAME = None
     #from sim_ezblock import *
@@ -58,10 +60,10 @@ class Picarx(object):
         self.left_rear_dir_pin = Pin("D4")
         self.right_rear_dir_pin = Pin("D5")
 
-
-        self.S0 = ADC('A0')
-        self.S1 = ADC('A1')
-        self.S2 = ADC('A2')
+        self.GM = Grayscale_Module(950)
+        #self.S0 = ADC('A0')
+        #self.S1 = ADC('A1')
+        #self.S2 = ADC('A2')
 
         self.motor_direction_pins = [self.left_rear_dir_pin, self.right_rear_dir_pin]
         self.motor_speed_pins = [self.left_rear_pwm_pin, self.right_rear_pwm_pin]
@@ -69,6 +71,10 @@ class Picarx(object):
         self.cali_dir_value = [int(i.strip()) for i in self.cali_dir_value.strip("[]").split(",")]
         self.cali_speed_value = [0, 0]
         self.dir_current_angle = 0
+
+        #self.cali_adc_list = [0,0,0]
+
+        atexit.register(self.stop)
         #初始化PWM引脚
         for pin in self.motor_speed_pins:
             pin.period(self.PERIOD)
@@ -156,12 +162,12 @@ class Picarx(object):
         # print("self.cam_cal_value_2:",self.cam_cal_value_2)
         print((value + self.cam_cal_value_2))
 
-    def get_adc_value(self):
-        adc_value_list = []
-        adc_value_list.append(self.S0.read())
-        adc_value_list.append(self.S1.read())
-        adc_value_list.append(self.S2.read())
-        return adc_value_list
+    #def get_adc_value(self):
+    #    adc_value_list = []
+    #    adc_value_list.append(self.S0.read())
+    #    adc_value_list.append(self.S1.read())
+    #    adc_value_list.append(self.S2.read())
+    #    return adc_value_list
 
     def set_power(self,speed):
         self.set_motor_speed(1, speed)
@@ -248,7 +254,6 @@ class Picarx(object):
         self.drive(speed,0)
         self.stop()
 
-    @atexit.register
     def stop(self):
         self.set_motor_speed(1, 0)
         self.set_motor_speed(2, 0)
@@ -279,6 +284,11 @@ class Picarx(object):
         cm = round(during * 340 / 2 * 100, 2)
         #print(cm)
         return cm
+
+    def turn_to_line_grayscale(self):
+        turn_scale = self.GM.get_line_dir()
+        self.set_dir_servo_angle(turn_scale*45)
+
 
 
 
