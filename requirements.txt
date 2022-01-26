@@ -2,3 +2,4 @@ logdecorator
 opencv-python
 numpy
 picamera
+readerwriterlock
