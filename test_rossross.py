@@ -87,6 +87,6 @@ if __name__ == "__main__":
     get_cam = rossros.Producer(camera_read,camera_bus, name="Camera Reader")
     #parse_gray = rossros.ConsumerProducer(gray_bus)
     find_lane = rossros.ConsumerProducer(camera_interpret, camera_bus, wheel_bus, name="Camera interpreter")
-    drive_control = rossros.Consumer(drive_car, (wheel_bus, ut_bus), name = "Car Controller")
+    drive_control = rossros.Consumer(drive_car, [wheel_bus, ut_bus], name = "Car Controller")
 
-    rossros.runConcurrently((get_ut, get_can, find_lane, drive_control))
+    rossros.runConcurrently([get_ut, get_can, find_lane, drive_control, termination_timer])
