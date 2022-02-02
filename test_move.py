@@ -1,3 +1,4 @@
+#! /usr/bin/python3
 import sys
 import signal
 #sys.path.append(r'/home/pi/picar-x/lib')

@@ -6,72 +6,49 @@ import cv2
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import numpy as np
-from picarx_improved import Picarx
 import logging
 import math
 
+lower_blue = np.array([60,40,40])
+upper_blue = np.array([150,255,255])
 
-color_dict = {'red':[0,4],'orange':[5,18],'yellow':[22,37],'green':[42,85],'blue':[92,110],'purple':[115,165],'red_2':[165,180]}  #Here is the range of H in the HSV color space represented by the color
-
-kernel_5 = np.ones((5,5),np.uint8) #Define a 5×5 convolution kernel with element values of all 1.
-
-class CarCam(object):
-    def __init__(self):
+class LaneFollow(object):
+    def __init__(self, lower_color=lower_blue, upper_color=upper_blue):
         #init camera
         logger.info("start cam control")
-        self.camera = PiCamera()
         self.camera.resolution = (640,480)
-        self.camera.framerate = 24
-        self.rawCapture = PiRGBArray(self.camera, size=self.camera.resolution)  
-        self.lower_blue = np.array([60,40,40])
-        self.upper_blue = np.array([150,255,255])
+        self.lower_color = lower_color
+        self.upper_color = upper_color
 
-    def get_heading(self):
-        for frame in self.camera.capture(self.rawCapture, format="bgr",use_video_port=True):# use_video_port=True
-            img = frame.array
-            lane_lines = self.detect_lane(img)
-            if len(lane_lines) == 0:
-                logging.error('No lane lines detected, nothing to do.')
-                return -99
+    def get_heading(self,frame):
+        img = frame.array
+        lane_lines = self.detect_lane(img)
+        if len(lane_lines) == 0:
+            logging.error('No lane lines detected, nothing to do.')
+            return -99
 
-            height, width, _ = img.shape
+        height, width, _ = img.shape
 
-            if len(lane_lines) == 1:
-                logging.debug('Only detected one lane line, just follow it. %s' % lane_lines[0])
-                x1, _, x2, _ = lane_lines[0][0]
-                x_offset = x2 - x1
-            else:
-                _, _, left_x2, _ = lane_lines[0][0]
-                _, _, right_x2, _ = lane_lines[1][0]
-                camera_mid_offset_percent = 0.02 # 0.0 means car pointing to center, -0.03: car is centered to left, +0.03 means car pointing to right
-                mid = int(width / 2 * (1 + camera_mid_offset_percent))
-                x_offset = (left_x2 + right_x2) / 2 - mid
+        if len(lane_lines) == 1:
+            logging.debug('Only detected one lane line, just follow it. %s' % lane_lines[0])
+            x1, _, x2, _ = lane_lines[0][0]
+            x_offset = x2 - x1
+        else:
+            _, _, left_x2, _ = lane_lines[0][0]
+            _, _, right_x2, _ = lane_lines[1][0]
+            camera_mid_offset_percent = 0.02 # 0.0 means car pointing to center, -0.03: car is centered to left, +0.03 means car pointing to right
+            mid = int(width / 2 * (1 + camera_mid_offset_percent))
+            x_offset = (left_x2 + right_x2) / 2 - mid
 
-            # find the steering angle, which is angle between navigation direction to end of center line
-            y_offset = int(height / 2)
+        # find the steering angle, which is angle between navigation direction to end of center line
+        y_offset = int(height / 2)
 
-            angle_to_mid_radian = math.atan(x_offset / y_offset)  # angle (in radian) to center vertical line
-            angle_to_mid_deg = int(angle_to_mid_radian * 180.0 / math.pi)  # angle (in degrees) to center vertical line
-            steering_angle = angle_to_mid_deg + 90  # this is the steering angle needed by picar front wheel
+        angle_to_mid_radian = math.atan(x_offset / y_offset)  # angle (in radian) to center vertical line
+        angle_to_mid_deg = int(angle_to_mid_radian * 180.0 / math.pi)  # angle (in degrees) to center vertical line
+        steering_angle = angle_to_mid_deg + 90  # this is the steering angle needed by picar front wheel
 
-            logging.debug('new steering angle: %s' % steering_angle)
-            return steering_angle
-
-
-    def turn_to_line(self,px):
-        for frame in self.camera.capture_continuous(self.rawCapture, format="bgr",use_video_port=True):# use_video_port=True
-            img = frame.array
-            #img,img_2,img_3 =  color_detect(img,'blue')  # Color detection function
-            #cv2.imshow("video", img)    # OpenCV image show
-            #cv2.imshow("mask", img_2)    # OpenCV image show
-            #cv2.imshow("morphologyEx_img", img_3)    # OpenCV image show
-            rawCapture.truncate(0)   # Release cache
-        
-            k = cv2.waitKey(1) & 0xFF
-            # 27 is the ESC key, which means that if you press the ESC key to exit
-            if k == 27:
-                camera.close()
-                break
+        logging.debug('new steering angle: %s' % steering_angle)
+        return steering_angle
 
     def detect_lane(self,img):
         edges = self.find_edges(img)
@@ -172,9 +149,3 @@ def make_points(frame, line):
     x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
     x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
     return [[x1, y1, x2, y2]]
-
-
-
-
-
-        
