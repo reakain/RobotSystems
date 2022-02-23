@@ -40,35 +40,38 @@ class Perception(object):
     # face tracking models
     modelFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/res10_300x300_ssd_iter_140000_fp16.caffemodel"
     configFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/deploy.prototxt"
+    conf_threshold = 0.6
 
     def __init__(self):
         # For face tracking
         self.net = cv2.dnn.readNetFromCaffe(self.configFile, self.modelFile)
         # For motion instructions maybe
-        self.x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
-        self.y_pid = PID.PID(P=0.00001, I=0, D=0)
-        self.z_pid = PID.PID(P=0.005, I=0, D=0)
+        #self.x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
+        #self.y_pid = PID.PID(P=0.00001, I=0, D=0)
+        #self.z_pid = PID.PID(P=0.005, I=0, D=0)
 
-    def reset(self):
-        # For face tracking
-        self.net = cv2.dnn.readNetFromCaffe(self.configFile, self.modelFile)
+    #def reset(self):
         # For motion instructions maybe
-        self.x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
-        self.y_pid = PID.PID(P=0.00001, I=0, D=0)
-        self.z_pid = PID.PID(P=0.005, I=0, D=0)
+    #    self.x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
+    #    self.y_pid = PID.PID(P=0.00001, I=0, D=0)
+    #    self.z_pid = PID.PID(P=0.005, I=0, D=0)
 
     def FindColorCube(self,img,target_color_range,start=True):
-        if start = True:
-            self.reset()
+        #if start = True:
+        #    self.reset()
         
         frame_mask = self.clean_build_color_mask(img, target_color_range)
         contours = self.get_contour_by_mask(frame_mask)
         contour,area_max = self.get_max_contour(contours)
-        img_draw,centers = self.get_contour_box(contour,img)
+        if contour is not None and area_max is not None:
+            img_draw,centers = self.get_contour_box(contour,img)
+            return img_draw,centers
+        return img, None
+
         #= self.get_new_movement()
 
 
-    def FindSortColorBox(self,img,target_color_range):
+    #def FindSortColorBox(self,img,target_color_range):
 
     # Takes an image frame, then finds the person face, and returns the image and 
     # coords of center of face if face is found, otherwise returns None
@@ -88,7 +91,7 @@ class Perception(object):
         detections = self.net.forward() #计算识别
         for i in range(detections.shape[2]):
             confidence = detections[0, 0, i, 2]
-            if confidence > conf_threshold:
+            if confidence > self.conf_threshold:
                 #识别到的人了的各个坐标转换会未缩放前的坐标
                 x1 = int(detections[0, 0, i, 3] * img_w)
                 y1 = int(detections[0, 0, i, 4] * img_h)
@@ -140,7 +143,7 @@ class Perception(object):
                     area_max_contour = c
         if contour_area_max > 100:
             return area_max_contour, contour_area_max  # 返回最大的轮廓
-        return
+        return None, None
 
 
     def get_contour_box(self,contour,img):
@@ -167,36 +170,36 @@ class Perception(object):
         return img, (center_x, center_y)
 
 
-    def get_new_movement(self,img,x_pid,y_pid,z_pid,x_dis,y_dis,z_dis,(center_x,center_y),area_max):
-        img_h, img_w = img.shape[:2]
-        x_pid.SetPoint = img_w / 2.0  # 设定
-        x_pid.update(center_x)  # 当前
-        dx = x_pid.output
-        x_dis += int(dx)  # 输出
+    # def get_new_movement(self,img,x_pid,y_pid,z_pid,x_dis,y_dis,z_dis,(center_x,center_y),area_max):
+    #     img_h, img_w = img.shape[:2]
+    #     x_pid.SetPoint = img_w / 2.0  # 设定
+    #     x_pid.update(center_x)  # 当前
+    #     dx = x_pid.output
+    #     x_dis += int(dx)  # 输出
 
-        x_dis = 0 if x_dis < 0 else x_dis
-        x_dis = 1000 if x_dis > 1000 else x_dis
+    #     x_dis = 0 if x_dis < 0 else x_dis
+    #     x_dis = 1000 if x_dis > 1000 else x_dis
 
-        y_pid.SetPoint = 9000  # 设定
-        if abs(area_max - 9000) < 50:
-            area_max = 9000
-        y_pid.update(area_max)  # 当前
-        dy = y_pid.output
-        y_dis += dy  # 输出
-        y_dis = 5.00 if y_dis < 5.00 else y_dis
-        y_dis = 10.00 if y_dis > 10.00 else y_dis
+    #     y_pid.SetPoint = 9000  # 设定
+    #     if abs(area_max - 9000) < 50:
+    #         area_max = 9000
+    #     y_pid.update(area_max)  # 当前
+    #     dy = y_pid.output
+    #     y_dis += dy  # 输出
+    #     y_dis = 5.00 if y_dis < 5.00 else y_dis
+    #     y_dis = 10.00 if y_dis > 10.00 else y_dis
         
-        if abs(center_y - img_h/2.0) < 20:
-            z_pid.SetPoint = center_y
-        else:
-            z_pid.SetPoint = img_h / 2.0
+    #     if abs(center_y - img_h/2.0) < 20:
+    #         z_pid.SetPoint = center_y
+    #     else:
+    #         z_pid.SetPoint = img_h / 2.0
             
-        z_pid.update(center_y)
-        dy = z_pid.output
-        z_dis += dy
+    #     z_pid.update(center_y)
+    #     dy = z_pid.output
+    #     z_dis += dy
 
-        z_dis = 32.00 if z_dis > 32.00 else z_dis
-        z_dis = 10.00 if z_dis < 10.00 else z_dis
+    #     z_dis = 32.00 if z_dis > 32.00 else z_dis
+    #     z_dis = 10.00 if z_dis < 10.00 else z_dis
 
-        return x_pid, y_pid, z_pid, x_dis, y_dis, z_dis
+    #     return x_pid, y_pid, z_pid, x_dis, y_dis, z_dis
 
