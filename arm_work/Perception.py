@@ -25,7 +25,8 @@ if sys.version_info.major == 2:
     sys.exit(0)
 
 
-class Perception():
+
+class Perception(object):
     range_rgb = {
     'red': (0, 0, 255),
     'blue': (255, 0, 0),
@@ -36,11 +37,70 @@ class Perception():
 
     size = (320, 240)
 
-    #x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
-    #y_pid = PID.PID(P=0.00001, I=0, D=0)
-    #z_pid = PID.PID(P=0.005, I=0, D=0)
+    # face tracking models
+    modelFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+    configFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/deploy.prototxt"
+
+    def __init__(self):
+        # For face tracking
+        self.net = cv2.dnn.readNetFromCaffe(self.configFile, self.modelFile)
+        # For motion instructions maybe
+        self.x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
+        self.y_pid = PID.PID(P=0.00001, I=0, D=0)
+        self.z_pid = PID.PID(P=0.005, I=0, D=0)
+
+    def reset(self):
+        # For face tracking
+        self.net = cv2.dnn.readNetFromCaffe(self.configFile, self.modelFile)
+        # For motion instructions maybe
+        self.x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
+        self.y_pid = PID.PID(P=0.00001, I=0, D=0)
+        self.z_pid = PID.PID(P=0.005, I=0, D=0)
+
+    def FindColorCube(self,img,target_color_range,start=True):
+        if start = True:
+            self.reset()
+        
+        frame_mask = self.clean_build_color_mask(img, target_color_range)
+        contours = self.get_contour_by_mask(frame_mask)
+        contour,area_max = self.get_max_contour(contours)
+        img_draw,centers = self.get_contour_box(contour,img)
+        #= self.get_new_movement()
 
 
+    def FindSortColorBox(self,img,target_color_range):
+
+    # Takes an image frame, then finds the person face, and returns the image and 
+    # coords of center of face if face is found, otherwise returns None
+    def FindFace(self,img):
+        img_copy = img.copy()
+        img_h, img_w = img.shape[:2]
+        
+        # this chunk makes sure we don't take too many frames
+        #if frame_pass:
+        #    frame_pass = False
+        #    return img
+        
+        #frame_pass = True
+
+        blob = cv2.dnn.blobFromImage(img_copy, 1, (150, 150), [104, 117, 123], False, False)
+        self.net.setInput(blob)
+        detections = self.net.forward() #计算识别
+        for i in range(detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > conf_threshold:
+                #识别到的人了的各个坐标转换会未缩放前的坐标
+                x1 = int(detections[0, 0, i, 3] * img_w)
+                y1 = int(detections[0, 0, i, 4] * img_h)
+                x2 = int(detections[0, 0, i, 5] * img_w)
+                y2 = int(detections[0, 0, i, 6] * img_h)             
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2, 8) #将识别到的人脸框出
+                center_x = int((x1 + x2)/2)
+                center_y = int((y1 + y2)/2)
+                return img, (center_x,center_y)
+                #if action_finish and abs(center_x - img_w/2) < 100:
+                #    start_greet = True       
+        return img, None
 
     def clean_build_color_mask(self, img,target_color_range):
         # make a copy of the image, and get the size
