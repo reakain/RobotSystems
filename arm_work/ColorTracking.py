@@ -111,20 +111,26 @@ def run(img):
     global img_h, img_w
     global x_dis, y_dis, z_dis
     
+    # make a copy of the image, and get the size
     img_copy = img.copy()
     img_h, img_w = img.shape[:2]
     
-     
+    # resize the image to match our static size selection (handles different camera frame sizes, I guess?)
     frame_resize = cv2.resize(img_copy, size, interpolation=cv2.INTER_NEAREST)
+    # add fuzzzzz
     frame_gb = cv2.GaussianBlur(frame_resize, (3, 3), 3)
+    # convert the color space to our specific skew coloring from our lab lights, I think
     frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)  # 将图像转换到LAB空间
     
     area_max = 0
     areaMaxContour = 0
+    # If we aren't doing a grabby
     if not start_pick_up:
+        # then for each defined color space....
         for i in lab_data:
             if i in __target_color:
                 detect_color = i
+                # make a mask of our image that's just that color space range
                 frame_mask = cv2.inRange(frame_lab,
                                              (lab_data[detect_color]['min'][0],
                                               lab_data[detect_color]['min'][1],
@@ -132,22 +138,33 @@ def run(img):
                                              (lab_data[detect_color]['max'][0],
                                               lab_data[detect_color]['max'][1],
                                               lab_data[detect_color]['max'][2]))  #对原图像和掩模进行位运算 
+                # I think this is finding any non-enclosed shapes
                 opened = cv2.morphologyEx(frame_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))  # 开运算
+                # and then closing them
                 closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))  # 闭运算
+                # and then getting the bounds of those shiny new closed shapes
                 contours = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2]  # 找出轮廓
+                # then we find THE BIGGEST ONE, which seems like a lazy cop out for finding the cube
                 areaMaxContour, area_max = getAreaMaxContour(contours)  # 找出最大轮廓
+        # if that biggest space is bigger than this arbitrary number of pixels then we probably have a cube?
         if area_max > 1000:  # 有找到最大面积
+            # make a circle around our weird blob shape
             (center_x, center_y), radius = cv2.minEnclosingCircle(areaMaxContour)  # 获取最小外接圆
             center_x = int(Misc.map(center_x, 0, size[0], 0, img_w))
             center_y = int(Misc.map(center_y, 0, size[1], 0, img_h))
             radius = int(Misc.map(radius, 0, size[0], 0, img_w))
+            # they don't have any comments, 
+            # but I guess if our circle is bigger than 100 radius we just... 
+            # go nah, nevermind???
             if radius > 100:
                 return img
             
+            # Make a rectangle around the circle instead
             rect = cv2.minAreaRect(areaMaxContour)
             box = np.int0(cv2.boxPoints(rect))
             cv2.drawContours(img, [box], -1, range_rgb[__target_color], 2)
             
+            # Start setting our target via pid
             x_pid.SetPoint = img_w / 2.0  # 设定
             x_pid.update(center_x)  # 当前
             dx = x_pid.output
