@@ -26,6 +26,7 @@ if sys.version_info.major == 2:
 
 
 
+# basicallly a static class, so we don't need to run it as a ros node, because we'll always do this before  a move anyway
 class Perception(object):
     range_rgb = {
     'red': (0, 0, 255),
@@ -56,6 +57,7 @@ class Perception(object):
     #    self.y_pid = PID.PID(P=0.00001, I=0, D=0)
     #    self.z_pid = PID.PID(P=0.005, I=0, D=0)
 
+    # Get the centers of our color cuuube, returns the image, and a tuble of the center of the cube if we found a cube
     def FindColorCube(self,img,target_color_range,start=True):
         #if start = True:
         #    self.reset()
@@ -86,18 +88,26 @@ class Perception(object):
         
         #frame_pass = True
 
+        # Get our new neural net feature blob hell
         blob = cv2.dnn.blobFromImage(img_copy, 1, (150, 150), [104, 117, 123], False, False)
+        # Feed it to the neural net
         self.net.setInput(blob)
+        # What do your compute eyes seee????
         detections = self.net.forward() #计算识别
+        # For each "found" face, let's see what it says
         for i in range(detections.shape[2]):
+            # If the confidence for the detection is good enough, then let's get the center of the
+            # face box. We're only doing the first one, so god help us if there are multiple people
             confidence = detections[0, 0, i, 2]
             if confidence > self.conf_threshold:
                 #识别到的人了的各个坐标转换会未缩放前的坐标
+                # Get the corners of the box
                 x1 = int(detections[0, 0, i, 3] * img_w)
                 y1 = int(detections[0, 0, i, 4] * img_h)
                 x2 = int(detections[0, 0, i, 5] * img_w)
                 y2 = int(detections[0, 0, i, 6] * img_h)             
                 cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2, 8) #将识别到的人脸框出
+                # Get the centers
                 center_x = int((x1 + x2)/2)
                 center_y = int((y1 + y2)/2)
                 return img, (center_x,center_y)
@@ -105,6 +115,7 @@ class Perception(object):
                 #    start_greet = True       
         return img, None
 
+    # build an image mask to only show the color range we specify
     def clean_build_color_mask(self, img,target_color_range):
         # make a copy of the image, and get the size
         img_copy = img.copy()
@@ -121,6 +132,7 @@ class Perception(object):
         frame_mask = cv2.inRange(frame_lab,tuple(target_color_range['min']), tuple(target_color_range['max']))  #对原图像和掩模进行位运算 
         return frame_mask
 
+    # Get all the contour blobs after applying a mask to the image
     def get_contour_by_mask(self, mask):
         eroded = cv2.erode(mask, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))  # 腐蚀
         dilated = cv2.dilate(eroded, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))  # 膨胀
@@ -129,6 +141,7 @@ class Perception(object):
         return contours
 
 
+    # Get the big boi contour color blob
     def get_max_contour(self,contours):
         # get the max contour
         contour_area_temp = 0
@@ -146,6 +159,7 @@ class Perception(object):
         return None, None
 
 
+    # Get a box around our contour color blob
     def get_contour_box(self,contour,img):
         
         # then check if it's a block
@@ -170,6 +184,7 @@ class Perception(object):
         return img, (center_x, center_y)
 
 
+    # This we'll put in a movement class instead, because fuck combining this stuff
     # def get_new_movement(self,img,x_pid,y_pid,z_pid,x_dis,y_dis,z_dis,(center_x,center_y),area_max):
     #     img_h, img_w = img.shape[:2]
     #     x_pid.SetPoint = img_w / 2.0  # 设定
