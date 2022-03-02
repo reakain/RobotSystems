@@ -1,5 +1,11 @@
 # Final Project - Shoulder Parrot
 
+## How to set up
+
+ 1. Copy the parrot folder into the armpi_fpv/src folder on the arm (ros workspace src folder)
+ 2. From armpi_fpv (ros workspace) call catkin_make on the command line
+ 3. 
+
 ## Order of Operations
 
  - Look for face
