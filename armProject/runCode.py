@@ -15,20 +15,22 @@ from sensor_msgs.msg import Image
 from hiwonder_servo_msgs.msg import MultiRawIdPosDur
 
 # Our custom classes for analysis and movement
-from Movement import Movement
-from Perception import Perception
+import Movement
+import Perception
 
 if sys.version_info.major == 2:
     print('Please run this program with python3!')
     sys.exit(0)
 
+perception = Perception.Perception()
 
+lock = RLock()
 
 # app初始化调用
 def init():
-    print("parrot Init")
-    initMove()
-    reset()
+    rospy.loginfo("parrot Init")
+    movement.go_home()
+    #reset()
 
 def enter_func(msg):
     global lock
@@ -122,10 +124,13 @@ if __name__ == '__main__':
     running_srv = rospy.Service('/parrot/set_running', SetBool, set_running)
     heartbeat_srv = rospy.Service('/parrot/heartbeat', SetBool, heartbeat_srv_cb)
 
-    debug = False
-    if debug:
-        enter_func(1)
-        start_running()
+    movement = Movement.Movement(joints_pub)
+    color_range = rospy.get_param('/lab_config_manager/color_range_list', {})
+
+    #debug = False
+    #if debug:
+    #    enter_func(1)
+    #    start_running()
     
     try:
         rospy.spin()

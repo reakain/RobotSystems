@@ -28,28 +28,30 @@ if sys.version_info.major == 2:
 
 # basicallly a static class, so we don't need to run it as a ros node, because we'll always do this before  a move anyway
 class Perception(object):
-    range_rgb = {
-    'red': (0, 0, 255),
-    'blue': (255, 0, 0),
-    'green': (0, 255, 0),
-    'black': (0, 0, 0),
-    'white': (255, 255, 255),
-    }
 
-    size = (320, 240)
+    def __init__(self, size = (320, 240),
+                modelFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/res10_300x300_ssd_iter_140000_fp16.caffemodel",
+                configFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/deploy.prototxt",
+                conf_threshold = 0.6,
+                range_rgb = {
+                            'red': (0, 0, 255),
+                            'blue': (255, 0, 0),
+                            'green': (0, 255, 0),
+                            'black': (0, 0, 0),
+                            'white': (255, 255, 255),
+                            }):
 
-    # face tracking models
-    modelFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/res10_300x300_ssd_iter_140000_fp16.caffemodel"
-    configFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/deploy.prototxt"
-    conf_threshold = 0.6
+        # Color range values
+        self.range_rgb = range_rgb
+        # image size setting
+        self.size = size
 
-    def __init__(self):
-        # For face tracking
+        # Face tracking data and intialization
+        self.modelFile = modelFile
+        self.configFile = configFile
+        self.conf_threshold = conf_threshold
         self.net = cv2.dnn.readNetFromCaffe(self.configFile, self.modelFile)
-        # For motion instructions maybe
-        #self.x_pid = PID.PID(P=0.1, I=0.00, D=0.008)  # pid初始化
-        #self.y_pid = PID.PID(P=0.00001, I=0, D=0)
-        #self.z_pid = PID.PID(P=0.005, I=0, D=0)
+
 
     #def reset(self):
         # For motion instructions maybe
