@@ -16,7 +16,7 @@ from sensor_msgs.msg import Image
 
 from sensor.msg import Led
 from warehouse.msg import Grasp
-from parrot.srv import *
+#from parrot.srv import *
 from hiwonder_servo_msgs.msg import MultiRawIdPosDur
 
 # Our custom classes for analysis and movement

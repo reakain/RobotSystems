@@ -72,7 +72,8 @@ class Movement(object):
         bus_servo_control.set_servos(self.joints_pub, 400, ((1, 500),))
         rospy.sleep(1)
 
-    def center_target(self,img,(center_x,center_y)):
+    def center_target(self,img,center):
+        (center_x,center_y) = center
         pass
     
     # Move to grab cube, steal from the sorting "pick" function
@@ -177,7 +178,8 @@ class Movement(object):
         bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 80), (4, 825), (5, 625), (6, 500)))
 
     # moving to center on cube? or face?
-    def get_new_movement(self,img,x_dis,y_dis,z_dis,(center_x,center_y),area_max):
+    def get_new_movement(self,img,x_dis,y_dis,z_dis,center,area_max):
+        (center_x,center_y) = center
         img_h, img_w = img.shape[:2]
         self.x_pid.SetPoint = img_w / 2.0  # 设定
         self.x_pid.update(center_x)  # 当前
