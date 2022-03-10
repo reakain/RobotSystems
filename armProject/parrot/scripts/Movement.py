@@ -15,12 +15,17 @@ from armpi_fpv import bus_servo_control
 # Make some movement class stuff
 class Movement(object):
     
+    d_pulse = 5
+    Z_DIS = 0.2
     size = (320, 240)
 
     def __init__(self, joints_pub):
         #rospy.init_node('movement_node')
         #rospy.loginfo("Arm motion code Init")
 
+        self.x_dis = 500
+        self.y_dis = 0.167
+        self.z_dis = self.Z_DIS
         # For motion instructions maybe
         self.x_pid = PID.PID(P=0.06, I=0.005, D=0)  # pid初始化
         self.y_pid = PID.PID(P=0.00001, I=0, D=0)
@@ -41,47 +46,43 @@ class Movement(object):
 
     # Once we're back at a start point we reset our pids, I think???
     def reset(self):
+        self.x_dis = 500
+        self.y_dis = 0.167
+        self.z_dis = self.Z_DIS
         # For motion instructions maybe
-        self.x_pid = PID.PID(P=0.06, I=0.005, D=0)  # pid初始化
-        self.y_pid = PID.PID(P=0.00001, I=0, D=0)
-        self.z_pid = PID.PID(P=0.00003, I=0, D=0)
+        self.x_pid.clear()
+        self.y_pid.clear()
+        self.z_pid.clear()
 
     # Do the grabber clacky clacky, can probably use this to drop the cube too lolol
     def clacky_clacky(self):
-        # TODO: Have to deal with the joints_pub here too
-        bus_servo_control.set_servos(self.joints_pub, 300, ((2, 300),))
+        bus_servo_control.set_servos(self.joints_pub, 300, ((1, 100),(2, 300),))
         rospy.sleep(0.3)
 
-        bus_servo_control.set_servos(self.joints_pub, 600, ((2, 700),))
+        bus_servo_control.set_servos(self.joints_pub, 600, ((1, 500),(2, 700),))
         rospy.sleep(0.6)
         
-        bus_servo_control.set_servos(self.joints_pub, 600, ((2, 300),))
+        bus_servo_control.set_servos(self.joints_pub, 600, ((1, 100),(2, 300),))
         rospy.sleep(0.6)
         
-        bus_servo_control.set_servos(self.joints_pub, 300, ((2, 500),))
-        rospy.sleep(0.3)
+        bus_servo_control.set_servos(self.joints_pub, 300, ((1, 500),(2, 500),))
+        # rospy.sleep(0.3)
         
-        bus_servo_control.set_servos(self.joints_pub, 400, ((1, 200),))
-        rospy.sleep(0.4)
+        # bus_servo_control.set_servos(self.joints_pub, 400, ((1, 100),))
+        # rospy.sleep(0.4)
 
-        bus_servo_control.set_servos(self.joints_pub, 400, ((1, 500),))
-        rospy.sleep(0.4)
+        # bus_servo_control.set_servos(self.joints_pub, 400, ((1, 500),))
+        # rospy.sleep(0.4)
         
-        bus_servo_control.set_servos(self.joints_pub, 400, ((1, 200),))
-        rospy.sleep(0.4)
+        # bus_servo_control.set_servos(self.joints_pub, 400, ((1, 100),))
+        # rospy.sleep(0.4)
         
-        bus_servo_control.set_servos(self.joints_pub, 400, ((1, 500),))
+        # bus_servo_control.set_servos(self.joints_pub, 400, ((1, 500),))
         rospy.sleep(1)
 
-    def center_target(self,img,center):
-        (center_x,center_y) = center
-        pass
     
-    # Move to grab cube, steal from the sorting "pick" function
-    
+    # Move to grab cube, steal from the sorting "pick" function   
     def grab_cube(self, grasps, have_adjust=False):
-    #def grab_cube(self):
-        #pass
         global roll_angle, last_x_dis
         global adjust, x_dis, y_dis, tag_x_dis, tag_y_dis, adjust_error, gripper_rotation
 
@@ -181,31 +182,40 @@ class Movement(object):
                 
     grasps=Grasp()
     
+    def look_around(self):
+        bus_servo_control.set_servos(self.joints_pub, 200, ((1, 500), (2, 500)))
+        rospy.sleep(0.2)
+        if self.x_dis > 875 or self.x_dis < 125:
+            self.d_pulse = -self.d_pulse
+        bus_servo_control.set_servos(self.joints_pub, 50, ((6, self.x_dis),))           
+        self.x_dis += self.d_pulse 
+        rospy.sleep(0.05) 
 
     # Bring cube to center
     def go_home(self):
         bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 80), (4, 825), (5, 625), (6, 500)))
 
     # moving to center on cube? or face?
-    def get_new_movement(self,img,x_dis,y_dis,z_dis,center,area_max):
+    # moving to center on cube? or face?
+    def center_target(self,img,center,area_max=900):
         (center_x,center_y) = center
         img_h, img_w = img.shape[:2]
         self.x_pid.SetPoint = img_w / 2.0  # 设定
         self.x_pid.update(center_x)  # 当前
         dx = self.x_pid.output
-        x_dis += int(dx)  # 输出
+        self.x_dis += int(dx)  # 输出
 
-        x_dis = 200 if x_dis < 200 else x_dis
-        x_dis = 800 if x_dis > 800 else x_dis
+        self.x_dis = 200 if self.x_dis < 200 else self.x_dis
+        self.x_dis = 800 if self.x_dis > 800 else self.x_dis
 
         self.y_pid.SetPoint = 900  # 设定
         if abs(area_max - 900) < 50:
             area_max = 900
         self.y_pid.update(area_max)  # 当前
         dy = self.y_pid.output
-        y_dis += dy  # 输出
-        y_dis = 0.12 if y_dis < 0.12 else y_dis
-        y_dis = 0.25 if y_dis > 0.25 else y_dis
+        self.y_dis += dy  # 输出
+        self.y_dis = 0.12 if self.y_dis < 0.12 else self.y_dis
+        self.y_dis = 0.25 if self.y_dis > 0.25 else self.y_dis
         
         if abs(center_y - img_h/2.0) < 20:
             self.z_pid.SetPoint = center_y
@@ -214,21 +224,17 @@ class Movement(object):
             
         self.z_pid.update(center_y)
         dy = self.z_pid.output
-        z_dis += dy
+        self.z_dis += dy
 
-        z_dis = 0.22 if z_dis > 0.22 else z_dis
-        z_dis = 0.17 if z_dis < 0.17 else z_dis
+        self.z_dis = 0.22 if self.z_dis > 0.22 else self.z_dis
+        self.z_dis = 0.17 if self.z_dis < 0.17 else self.z_dis
 
-        return x_dis, y_dis, z_dis
-                 
-
-    def move_with_ik(self,x_dis,y_dis,z_dis):
-        target = self.ik.setPitchRanges((0, round(y_dis, 4), round(z_dis, 4)), -90, -85, -95)
+        target = self.ik.setPitchRanges((0, round(self.y_dis, 4), round(self.z_dis, 4)), -90, -85, -95)
         if target:
             servo_data = target[1]
             # TODO: handle this joints pub thing
             bus_servo_control.set_servos(self.joints_pub, 20, (
-                (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, x_dis)))
+                (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, self.x_dis)))
     
 if __name__ == '__main__':
     motionControl = Movement()

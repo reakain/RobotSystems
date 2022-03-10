@@ -69,7 +69,7 @@ class Perception(object):
         contour,area_max = self.get_max_contour(contours)
         if contour is not None and area_max is not None:
             img_draw,centers = self.get_contour_box(contour,img)
-            return img_draw,centers
+            return img_draw,centers,area_max
         return img, None
 
         #= self.get_new_movement()

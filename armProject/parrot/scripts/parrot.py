@@ -163,12 +163,15 @@ def run(img):
             movement.clacky_clacky()
             __findingFace = False
             __findingCube = True
+        else:
+            movement.look_around()
+
     elif __findingCube:
         if len(__target_data[0]) != 0:
-            img, center = perception.FindColorCube(img, __target_data[0])
+            img, center, area_max = perception.FindColorCube(img, __target_data[0])
 
             if center != None:
-                movement.center_target(img,center)
+                movement.center_target(img,center, area_max)
                 movement.grab_cube()
                 __findingCube = False
                 __goHome = True
