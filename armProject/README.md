@@ -5,6 +5,8 @@
  1. git clone repo to home directory
  2. Copy parrot folder to armpi_fpv src folder
     `cp -R ~/RobotSystems/armProject/parrot ~/armpi_fpv/src/`
+ 3. Copy functions launcher
+    `cp ~/RobotSystems/armProject/start_functions.launch ~/armpi_fpv/src/armpi_fpv_bringup/launch/`
  3. From armpi_fpv (ros workspace) build the new code setup
     `cd ~/armpi_fpv && catkin_make`
  4. Source the new info to your path
