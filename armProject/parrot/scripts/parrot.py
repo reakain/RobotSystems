@@ -26,10 +26,32 @@ perception = Perception.Perception()
 
 lock = RLock()
 
+__findingFace = True
+__isRunning = False
+__goHome = False
+__dropCube = False
+
+stop_state = 0
+move_state = 1
+
+heartbeat_timer = None
+org_image_sub_ed = False
+
+def initMove(delay=True):
+    with lock:
+        movement.go_home()
+    if delay:
+        rospy.sleep(2) 
+
 # app初始化调用
 def init():
+    global stop_state
+    global __target_data
+
     rospy.loginfo("parrot Init")
-    movement.go_home()
+    stop_state = 0
+    __target_data = ((), ())
+    initMove()
     #reset()
 
 def enter_func(msg):
@@ -93,6 +115,17 @@ def set_running(msg):
     return [True, 'set_running']
 
 
+__target_data = ((), ())
+def set_target(msg):
+    global lock
+    global __target_data
+    
+    rospy.loginfo('%s', msg)
+    with lock:
+        __target_data = (msg.color, msg.tag)
+
+    return [True, 'set_target']
+
 def heartbeat_srv_cb(msg):
     global heartbeat_timer
     
@@ -107,7 +140,65 @@ def heartbeat_srv_cb(msg):
     return rsp
 
 
-#def run():
+th = threading.Thread(target=move)
+th.setDaemon(True)
+th.start()
+
+def run(img):
+    global __findingFace
+    global __findingCube
+    global __goHome
+    global __dropCube
+
+    if __findingFace:
+        img, center = perception.FindFace(img)
+
+        if center != None:
+            movement.center_target(img,center)
+            movement.clacky_clacky()
+            __findingFace = False
+            __findingCube = True
+    elif __findingCube:
+        if len(__target_data[0]) != 0:
+            img, center = perception.FindColorCube(img, __target_data[0])
+
+            if center != None:
+                movement.center_target(img,center)
+                movement.grab_cube()
+                __findingCube = False
+                __goHome = True
+    elif __goHome:
+        movement.go_home()
+        __goHome = False
+        __dropCube = True
+    elif __dropCube:
+        movement.clacky_clacky()
+        __dropCube = False
+        __findingFace = True
+
+    return img
+
+
+def image_callback(ros_image):
+    global lock
+    global stop_state
+
+    image = np.ndarray(shape=(ros_image.height, ros_image.width, 3), dtype=np.uint8,
+                       buffer=ros_image.data)  # 将自定义图像消息转化为图像
+    cv2_img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR) # 转为opencv格式
+    frame = cv2_img.copy()
+    frame_result = frame
+    
+    with lock:
+        if  __isRunning:
+            frame_result = run(frame)
+        else:
+            if stop_state:
+                stop_state = 0
+                initMove(delay=False)
+    rgb_image = cv2.cvtColor(frame_result, cv2.COLOR_BGR2RGB).tostring() # 转为ros格式
+    ros_image.data = rgb_image
+    image_pub.publish(ros_image)
 
 
 if __name__ == '__main__':
@@ -125,6 +216,7 @@ if __name__ == '__main__':
     heartbeat_srv = rospy.Service('/parrot/heartbeat', SetBool, heartbeat_srv_cb)
 
     movement = Movement.Movement(joints_pub)
+    perception = Perception.Perception()
     color_range = rospy.get_param('/lab_config_manager/color_range_list', {})
 
     #debug = False

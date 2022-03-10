@@ -64,6 +64,8 @@ class Movement(object):
         bus_servo_control.set_servos(self.joints_pub, 400, ((1, 500),))
         rospy.sleep(1)
 
+    def center_target(self,img,(center_x,center_y)):
+        pass
 
     # Move to grab cube, steal from the sorting "pick" function
     def grab_cube(self):
@@ -72,10 +74,7 @@ class Movement(object):
 
     # Bring cube to center
     def go_home(self):
-        with lock:
-            bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 80), (4, 825), (5, 625), (6, 500)))
-        if delay:
-            rospy.sleep(2) 
+        bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 80), (4, 825), (5, 625), (6, 500)))
 
     # moving to center on cube? or face?
     def get_new_movement(self,img,x_dis,y_dis,z_dis,(center_x,center_y),area_max):
