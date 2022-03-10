@@ -89,11 +89,11 @@ class Movement(object):
 
             # 计算是否能够到达目标位置，如果不能够到达，返回False
         #target1 = ik.setPitchRanges((position.x + approach.x, position.y + approach.y, position.z + approach.z),
-                                        rotation.r, -180, 0)
+        #                                rotation.r, -180, 0)
         #target2 = ik.setPitchRanges((position.x, position.y, position.z), rotation.r, -180, 0)
         #target3 = ik.setPitchRanges((position.x, position.y, position.z + grasps.up), rotation.r, -180, 0)
         #target4 = ik.setPitchRanges((position.x + retreat.x, position.y + retreat.y, position.z + retreat.z),
-                                        rotation.r, -180, 0)
+        #                                rotation.r, -180, 0)
 
             #if not __isRunning:
                 #return False
