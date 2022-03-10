@@ -7,7 +7,7 @@ import rospy
 import numpy as np
 
 from kinematics import ik_transform
-
+from warehouse.msg import Grasp
 from armpi_fpv import PID
 from armpi_fpv import Misc
 from armpi_fpv import bus_servo_control
@@ -29,6 +29,14 @@ class Movement(object):
         self.ik = ik_transform.ArmIK()
 
         self.joints_pub = joints_pub
+        
+        #y_d = 0
+        #roll_angle = 0
+        #gripper_rotation = 0
+      # 木块对角长度一半
+        #square_diagonal = 0.03*math.sin(math.pi/4)
+        #F = 1000/240.0
+        #adjust_error=False
 
     # Once we're back at a start point we reset our pids, I think???
     def reset(self):
@@ -66,11 +74,103 @@ class Movement(object):
 
     def center_target(self,img,(center_x,center_y)):
         pass
-
+    
     # Move to grab cube, steal from the sorting "pick" function
-    def grab_cube(self):
+    
+    def grab_cube(self, grasps, have_adjust=false):
         pass
+        #global roll_angle, last_x_dis
+        #global adjust, x_dis, y_dis, tag_x_dis, tag_y_dis, adjust_error, gripper_rotation
 
+        #position = grasps.grasp_pos.position
+        #rotation = grasps.grasp_pos.rotation
+        #approach = grasps.grasp_approach
+        #retreat = grasps.grasp_retreat
+
+            # 计算是否能够到达目标位置，如果不能够到达，返回False
+        #target1 = ik.setPitchRanges((position.x + approach.x, position.y + approach.y, position.z + approach.z),
+                                        rotation.r, -180, 0)
+        #target2 = ik.setPitchRanges((position.x, position.y, position.z), rotation.r, -180, 0)
+        #target3 = ik.setPitchRanges((position.x, position.y, position.z + grasps.up), rotation.r, -180, 0)
+        #target4 = ik.setPitchRanges((position.x + retreat.x, position.y + retreat.y, position.z + retreat.z),
+                                        rotation.r, -180, 0)
+
+            #if not __isRunning:
+                #return False
+            #if target1 and target2 and target3 and target4:
+                #if not have_adjust:
+                    #servo_data = target1[1]
+                    #bus_servo_control.set_servos(joints_pub, 1800, (
+                    #(3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                    #rospy.sleep(2)
+                    #if not __isRunning:
+                        #return False
+
+                    # 第三步：移到目标点
+                    #servo_data = target2[1]
+                    #bus_servo_control.set_servos(joints_pub, 1500, (
+                    #(3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                    #rospy.sleep(2)
+                    #if not __isRunning:
+                        #servo_data = target4[1]
+                        #bus_servo_control.set_servos(joints_pub, 1000, (
+                        #(1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                        #rospy.sleep(1)
+                        #return False
+
+                    #roll_angle = target2[2]
+                    #gripper_rotation = box_rotation_angle #this uses the max contour stuff 
+
+                    #x_dis = tag_x_dis = last_x_dis = target2[1]['servo6']
+                    #y_dis = tag_y_dis = 0
+
+
+                #else:
+                    # 第五步: 对齐
+                    #bus_servo_control.set_servos(joints_pub, 500, ((2, 500 + int(F * gripper_rotation)),))
+                    #rospy.sleep(0.8)
+                    #if not __isRunning:
+                        #servo_data = target4[1]
+                        #bus_servo_control.set_servos(joints_pub, 1000, (
+                        #(1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                        #rospy.sleep(1)
+                        #return False
+
+                    # 第六步：夹取
+                    #bus_servo_control.set_servos(joints_pub, 500, ((1, grasps.grasp_posture - 80),))
+                    #rospy.sleep(0.6)
+                    #bus_servo_control.set_servos(joints_pub, 500, ((1, grasps.grasp_posture),))
+                    #rospy.sleep(0.8)
+                    #if not __isRunning:
+                        #bus_servo_control.set_servos(joints_pub, 500, ((1, grasps.pre_grasp_posture),))
+                        #rospy.sleep(0.5)
+                        #servo_data = target4[1]
+                        #bus_servo_control.set_servos(joints_pub, 1000, (
+                        #(1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                        #rospy.sleep(1)
+                        #return False
+
+                    # 第七步：抬升物体
+                    #if grasps.up != 0:
+                        #servo_data = target3[1]
+                        #bus_servo_control.set_servos(joints_pub, 500, (
+                        #(3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                        #rospy.sleep(0.6)
+                    #if not __isRunning:
+                        #bus_servo_control.set_servos(joints_pub, 500, ((1, grasps.pre_grasp_posture),))
+                        #rospy.sleep(0.5)
+                        #servo_data = target4[1]
+                        #bus_servo_control.set_servos(joints_pub, 1000, (
+                        #(1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                        #rospy.sleep(1)
+                        #return False
+
+                    #return target2[2]
+            #else:
+                #rospy.loginfo('pick failed')
+                #return False
+        #grasps=Grasp()
+        pass
 
     # Bring cube to center
     def go_home(self):
@@ -109,6 +209,7 @@ class Movement(object):
         z_dis = 0.17 if z_dis < 0.17 else z_dis
 
         return x_dis, y_dis, z_dis
+                 
 
     def move_with_ik(self,x_dis,y_dis,z_dis):
         target = self.ik.setPitchRanges((0, round(y_dis, 4), round(z_dis, 4)), -90, -85, -95)
