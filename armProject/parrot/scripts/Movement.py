@@ -40,9 +40,9 @@ class Movement(object):
         self.gripper_rotation = 0
       # 木块对角长度一半
         self.square_diagonal = 0.03*math.sin(math.pi/4)
-        self.F = 1000/240.0
-        self.adjust_error=False
-        self.last_x_dis=x_dis
+        #F = 1000/240.0
+        #self.adjust_error=False
+        #self.last_x_dis=x_dis
 
     # Once we're back at a start point we reset our pids, I think???
     def reset(self):
