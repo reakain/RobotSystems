@@ -32,6 +32,8 @@ perception = Perception.Perception()
 lock = RLock()
 
 __findingFace = True
+__findingCube = False
+__approachingCube = False
 __isRunning = False
 __goHome = False
 __dropCube = False
@@ -152,6 +154,7 @@ def heartbeat_srv_cb(msg):
 def run(img):
     global __findingFace
     global __findingCube
+    global __approachingCube
     global __goHome
     global __dropCube
 
@@ -172,7 +175,15 @@ def run(img):
 
             if center != None:
                 movement.center_target(img,center, area_max)
-                movement.grab_cube()
+                __findingCube = False
+                __approachingCube = True
+    elif __approachingCube:
+        if len(__target_data[0]) != 0:
+            img, center, area_max = perception.FindColorCube(img, __target_data[0])
+
+            if center != None:
+                movement.approach_cube()
+                movement.grab_cube(have_adjust = True)
                 __findingCube = False
                 __goHome = True
     elif __goHome:

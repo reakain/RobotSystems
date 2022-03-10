@@ -24,7 +24,9 @@ class Movement(object):
         #rospy.loginfo("Arm motion code Init")
 
         self.x_dis = 500
+        self.last_x_dis = self.x_dis
         self.y_dis = 0.167
+        self.last_y_dis = self.y_dis
         self.z_dis = self.Z_DIS
         # For motion instructions maybe
         self.x_pid = PID.PID(P=0.06, I=0.005, D=0)  # pid初始化
@@ -35,7 +37,8 @@ class Movement(object):
 
         self.joints_pub = joints_pub
         
-        y_d = 0
+        self.y_d = 0
+        self.grasps=Grasp()
         roll_angle = 0
         gripper_rotation = 0
       # 木块对角长度一半
@@ -47,7 +50,9 @@ class Movement(object):
     # Once we're back at a start point we reset our pids, I think???
     def reset(self):
         self.x_dis = 500
+        self.last_x_dis = self.x_dis
         self.y_dis = 0.167
+        self.last_y_dis = self.y_dis
         self.z_dis = self.Z_DIS
         # For motion instructions maybe
         self.x_pid.clear()
@@ -81,106 +86,99 @@ class Movement(object):
         rospy.sleep(1)
 
     
-    # Move to grab cube, steal from the sorting "pick" function   
-    def grab_cube(self, grasps, have_adjust=False):
-        global roll_angle, last_x_dis
-        global adjust, x_dis, y_dis, tag_x_dis, tag_y_dis, adjust_error, gripper_rotation
+    def approach_cube(self):
+        # 夹取的位置
+        self.grasps.grasp_pos.position.x = X
+        self.grasps.grasp_pos.position.y = Y
+        self.grasps.grasp_pos.position.z = Misc.map(Y - 0.15, 0, 0.15, color_z_min, color_z_max)
+        # 夹取时的俯仰角
+        self.grasps.grasp_pos.rotation.r = -175
+        
+        # 夹取后抬升的距离
+        self.grasps.up = 0
+        
+        # 夹取时靠近的方向和距离
+        self.grasps.grasp_approach.y = -0.01
+        self.grasps.grasp_approach.z = 0.02
+        
+        # 夹取后后撤的方向和距离
+        self.grasps.grasp_retreat.z = 0.04
+        
+        # 夹取前后夹持器的开合
+        self.grasps.grasp_posture = 450
+        self.grasps.pre_grasp_posture = 75
 
-        position = grasps.grasp_pos.position
-        rotation = grasps.grasp_pos.rotation
-        approach = grasps.grasp_approach
-        retreat = grasps.grasp_retreat
+        result = self.grab_cube()
+        return result
+
+
+    # Move to grab cube, steal from the sorting "pick" function   
+    def grab_cube(self, have_adjust=False):
+        global roll_angle
+        global adjust, adjust_error, gripper_rotation
+
+        position = self.grasps.grasp_pos.position
+        rotation = self.grasps.grasp_pos.rotation
+        approach = self.grasps.grasp_approach
+        retreat = self.grasps.grasp_retreat
         y_d = 0
         roll_angle = 0
         square_diagonal = 0.03*math.sin(math.pi/4)
         F = 1000/240.0
         adjust_error=False
-        last_x_dis=x_dis
+        self.last_x_dis=self.x_dis
 
             # 计算是否能够到达目标位置，如果不能够到达，返回False
-        target1 = ik.setPitchRanges((position.x + approach.x, position.y + approach.y, position.z + approach.z),
+        target1 = self.ik.setPitchRanges((position.x + approach.x, position.y + approach.y, position.z + approach.z),
                                         rotation.r, -180, 0)
-        target2 = ik.setPitchRanges((position.x, position.y, position.z), rotation.r, -180, 0)
-        target3 = ik.setPitchRanges((position.x, position.y, position.z + grasps.up), rotation.r, -180, 0)
-        target4 = ik.setPitchRanges((position.x + retreat.x, position.y + retreat.y, position.z + retreat.z),
+        target2 = self.ik.setPitchRanges((position.x, position.y, position.z), rotation.r, -180, 0)
+        target3 = self.ik.setPitchRanges((position.x, position.y, position.z + self.grasps.up), rotation.r, -180, 0)
+        target4 = self.ik.setPitchRanges((position.x + retreat.x, position.y + retreat.y, position.z + retreat.z),
                                         rotation.r, -180, 0)
 
-            if not __isRunning:
-                return False
             if target1 and target2 and target3 and target4:
                 if not have_adjust:
                     servo_data = target1[1]
                     bus_servo_control.set_servos(self.joints_pub, 1800, (
                     (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
                     rospy.sleep(2)
-                    if not __isRunning:
-                        return False
 
                     # 第三步：移到目标点
                     servo_data = target2[1]
                     bus_servo_control.set_servos(self.joints_pub, 1500, (
                     (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
                     rospy.sleep(2)
-                    if not __isRunning:
-                        servo_data = target4[1]
-                        bus_servo_control.set_servos(self.joints_pub, 1000, (
-                        (1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
-                        rospy.sleep(1)
-                        return False
+
 
                     roll_angle = target2[2]
                     gripper_rotation = 0 #box_rotation_angle #this uses the max contour stuff 
 
-                    x_dis = last_x_dis = target2[1]['servo6']
-                    y_dis  = 0
+                    self.x_dis = last_x_dis = target2[1]['servo6']
+                    self.y_dis  = 0
 
 
                 else:
                     # 第五步: 对齐
                     bus_servo_control.set_servos(self.joints_pub, 500, ((2, 500 + int(F * gripper_rotation)),))
                     rospy.sleep(0.8)
-                    if not __isRunning:
-                        servo_data = target4[1]
-                        bus_servo_control.set_servos(self.joints_pub, 1000, (
-                        (1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
-                        rospy.sleep(1)
-                        return False
 
                     # 第六步：夹取
-                    bus_servo_control.set_servos(self.joints_pub, 500, ((1, grasps.grasp_posture - 80),))
+                    bus_servo_control.set_servos(self.joints_pub, 500, ((1, self.grasps.grasp_posture - 80),))
                     rospy.sleep(0.6)
-                    bus_servo_control.set_servos(self.joints_pub, 500, ((1, grasps.grasp_posture),))
+                    bus_servo_control.set_servos(self.joints_pub, 500, ((1, self.grasps.grasp_posture),))
                     rospy.sleep(0.8)
-                    if not __isRunning:
-                        bus_servo_control.set_servos(self.joints_pub, 500, ((1, grasps.pre_grasp_posture),))
-                        rospy.sleep(0.5)
-                        servo_data = target4[1]
-                        bus_servo_control.set_servos(self.joints_pub, 1000, (
-                        (1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
-                        rospy.sleep(1)
-                        return False
 
                     # 第七步：抬升物体
-                    if grasps.up != 0:
+                    if self.grasps.up != 0:
                         servo_data = target3[1]
                         bus_servo_control.set_servos(self.joints_pub, 500, (
                         (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
                         rospy.sleep(0.6)
-                    if not __isRunning:
-                        bus_servo_control.set_servos(self.joints_pub, 500, ((1, grasps.pre_grasp_posture),))
-                        rospy.sleep(0.5)
-                        servo_data = target4[1]
-                        bus_servo_control.set_servos(self.joints_pub, 1000, (
-                        (1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
-                        rospy.sleep(1)
-                        return False
 
                     return target2[2]
             else:
                 rospy.loginfo('pick failed')
                 return False
-                
-    grasps=Grasp()
     
     def look_around(self):
         bus_servo_control.set_servos(self.joints_pub, 200, ((1, 500), (2, 500)))
