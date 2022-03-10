@@ -178,8 +178,8 @@ class Movement(object):
             else:
                 rospy.loginfo('pick failed')
                 return False
-            
-        grasps=Grasp()
+                
+    grasps=Grasp()
     
 
     # Bring cube to center
