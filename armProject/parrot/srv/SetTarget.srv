@@ -1,4 +1,5 @@
-string data
+string[] color
+string[] tag
 ---
 bool success
 string message
