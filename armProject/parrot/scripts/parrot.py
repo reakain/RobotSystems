@@ -10,8 +10,13 @@ import threading
 import numpy as np
 from threading import RLock, Timer
 
+from std_msgs.msg import *
 from std_srvs.srv import *
 from sensor_msgs.msg import Image
+
+from sensor.msg import Led
+from warehouse.msg import Grasp
+from parrot.srv import *
 from hiwonder_servo_msgs.msg import MultiRawIdPosDur
 
 # Our custom classes for analysis and movement
