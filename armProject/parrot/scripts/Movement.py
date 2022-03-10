@@ -39,13 +39,13 @@ class Movement(object):
         
         self.y_d = 0
         self.grasps=Grasp()
-        roll_angle = 0
-        gripper_rotation = 0
+        self.roll_angle = 0
+        self.gripper_rotation = 0
       # 木块对角长度一半
-        square_diagonal = 0.03*math.sin(math.pi/4)
-        F = 1000/240.0
-        adjust_error=False
-        last_x_dis=x_dis
+        self.square_diagonal = 0.03*math.sin(math.pi/4)
+        #F = 1000/240.0
+        #self.adjust_error=False
+        #self.last_x_dis=x_dis
 
     # Once we're back at a start point we reset our pids, I think???
     def reset(self):
