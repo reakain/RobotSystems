@@ -3,17 +3,19 @@
 ## How to set up
 
  1. git clone repo to home directory
- 2. Copy parrot folder to armpi_fpv src folder
-    `cp -R ~/RobotSystems/armProject/parrot ~/armpi_fpv/src/`
- 3. Copy functions launcher
-    `cp ~/RobotSystems/armProject/start_functions.launch ~/armpi_fpv/src/armpi_fpv_bringup/launch/`
- 3. From armpi_fpv (ros workspace) build the new code setup
-    `cd ~/armpi_fpv && catkin_make`
- 4. Source the new info to your path
-    `source ~/armpi_fpv/devel/setup.bash`
- 5. Call the parrot service to start
+ 2. Run setup shell script
+    `cd ~/RobotSystems/armProject/setup.sh`
+ 3. Call the parrot service to start
     `rosservice call /parrot/enter "{}"`
-    
+ 4. Set Running
+    `rosservice call /parrot/set_running "data: true"`
+ 5. Set Target
+    `rosservice call /parrot/set_target "color:
+- 'red'
+- 'green'
+- 'blue'"`
+
+
 
 ## Order of Operations
 
