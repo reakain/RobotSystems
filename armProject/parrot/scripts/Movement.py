@@ -78,7 +78,8 @@ class Movement(object):
     
     # Move to grab cube, steal from the sorting "pick" function
     
-    def grab_cube(self, grasps, have_adjust=false):
+    #def grab_cube(self, grasps, have_adjust=False):
+    def grab_cube(self):
         pass
         #global roll_angle, last_x_dis
         #global adjust, x_dis, y_dis, tag_x_dis, tag_y_dis, adjust_error, gripper_rotation
