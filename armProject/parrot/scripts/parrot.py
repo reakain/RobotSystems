@@ -218,6 +218,7 @@ if __name__ == '__main__':
     enter_srv = rospy.Service('/parrot/enter', Trigger, enter_func)
     exit_srv = rospy.Service('/parrot/exit', Trigger, exit_func)
     running_srv = rospy.Service('/parrot/set_running', SetBool, set_running)
+    set_target_srv = rospy.Service('/parrot/set_target', SetTarget, set_target)
     heartbeat_srv = rospy.Service('/parrot/heartbeat', SetBool, heartbeat_srv_cb)
 
     movement = Movement.Movement(joints_pub)
@@ -228,10 +229,10 @@ if __name__ == '__main__':
     #if debug:
     #    enter_func(1)
     #    start_running()
-    
+
     try:
         rospy.spin()
     except KeyboardInterrupt:
         print("Shutting down")
-    finally:
-        cv2.destroyAllWindows()
+#    finally:
+#        cv2.destroyAllWindows()
