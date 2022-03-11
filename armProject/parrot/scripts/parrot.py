@@ -32,11 +32,20 @@ perception = Perception.Perception()
 lock = RLock()
 
 __findingFace = True
+__sweepArea = False
+__centerTarget = False
+__clackyClacky = False
 __findingCube = False
 __approachingCube = False
+__getCube = False
 __isRunning = False
 __goHome = False
 __dropCube = False
+
+center = (0,0)
+area_max = 900
+box_angle = 0
+img_shape = (0,0)
 
 stop_state = 0
 move_state = 1
@@ -110,7 +119,7 @@ def stop_running():
     rospy.loginfo("stop running parrot")
     with lock:
         __isRunning = False
-        reset()
+        movement.reset()
         initMove(delay=False)
 
 def set_running(msg):
@@ -152,51 +161,96 @@ def heartbeat_srv_cb(msg):
 #th.start()
 
 def run(img):
-    global __findingFace
     global __findingCube
     global __approachingCube
-    global __goHome
-    global __dropCube
+    global __centerTarget, __clackyClacky, __sweepArea
+    global __isRunning, __getCube, __goHome, __dropCube, __findingFace
+    global center, area_max, box_angle, img_shape
 
     if __findingFace:
         img, center = perception.FindFace(img)
+        img_shape = img.shape[:2]
 
         if center != None:
-            movement.center_target(img,center)
-            movement.clacky_clacky()
+            area_max = 900
+            __sweepArea = False
+            __centerTarget = True
+            __clackyClacky = True
+            #movement.center_target(img,center)
+            #movement.clacky_clacky()
             __findingFace = False
             __findingCube = True
         else:
-            movement.look_around()
+            #movement.look_around()
+            __sweepArea = True
 
     elif __findingCube:
         if len(__target_data[0]) != 0:
             img, center, area_max = perception.FindColorCube(img, __target_data[0])
+            img_shape = img.shape[:2]
 
             if center != None:
-                movement.center_target(img,center, area_max)
+                #movement.center_target(img,center, area_max)
+                __centerTarget = True
                 __findingCube = False
                 __approachingCube = True
+            #else:
+
+                
     elif __approachingCube:
         if len(__target_data[0]) != 0:
             img, center, area_max, box_angle = perception.FindColorCubeGrab(img, __target_data[0])
+            img_shape = img.shape[:2]
 
             if center != None:
-                movement.approach_cube()
-                movement.grab_cube(box_angle, have_adjust = True)
-                __findingCube = False
-                __goHome = True
-    elif __goHome:
-        movement.go_home()
-        __goHome = False
-        __dropCube = True
-    elif __dropCube:
-        movement.clacky_clacky()
-        __dropCube = False
-        __findingFace = True
+                __getCube = True
+                #movement.approach_cube()
+                #movement.grab_cube(box_angle, have_adjust = True)
+                __approachingCube = False
+                #__goHome = True
+    #elif __goHome:
+        #movement.go_home()
+    #    __goHome = False
+    #    __dropCube = True
+    #elif __dropCube:
+    #    movement.clacky_clacky()
+    #    __dropCube = False
+    #    __findingFace = True
 
     return img
 
+
+def move():
+    global __centerTarget, __clackyClacky, __sweepArea
+    global __isRunning, __getCube, __goHome, __dropCube, __findingFace
+    global center, area_max, box_angle, img_shape
+
+    while True:
+        if __isRunning:
+            if __sweepArea:
+                movement.look_around()
+            if __centerTarget:
+                movement.center_target(img_shape,center,area_max)
+            if __clackyClacky:
+                movement.clacky_clacky()
+                __clackyClacky = False
+            elif __getCube:
+                movement.approach_cube()
+                movement.grab_cube(box_angle, have_adjust = True)
+                __getCube = False
+                __goHome = True
+            elif __goHome:
+                movement.go_home()
+                __goHome = False
+                __dropCube = True
+            elif __dropCube:
+                movement.clacky_clacky()
+                __dropCube = False
+                __findingFace = True
+
+th = threading.Thread(target=move)
+th.setDaemon(True)
+th.start()
 
 def image_callback(ros_image):
     global lock

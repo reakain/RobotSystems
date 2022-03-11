@@ -45,6 +45,10 @@ class Movement(object):
         self.square_diagonal = 0.03*math.sin(math.pi/4)
         #F = 1000/240.0
         #self.last_x_dis=x_dis
+        config = rospy.get_param('config', {})
+        if config != {}:    
+            self.color_z_min = config['color_z_min']
+            self.color_z_max = config['color_z_max']
 
     # Once we're back at a start point we reset our pids, I think???
     def reset(self):
@@ -60,17 +64,29 @@ class Movement(object):
 
     # Do the grabber clacky clacky, can probably use this to drop the cube too lolol
     def clacky_clacky(self):
-        bus_servo_control.set_servos(self.joints_pub, 300, ((1, 100),(2, 300),))
+        bus_servo_control.set_servos(self.joints_pub, 300, ((1, 50),(2, 300),))
         rospy.sleep(0.3)
 
         bus_servo_control.set_servos(self.joints_pub, 600, ((1, 500),(2, 700),))
         rospy.sleep(0.6)
         
-        bus_servo_control.set_servos(self.joints_pub, 600, ((1, 100),(2, 300),))
+        bus_servo_control.set_servos(self.joints_pub, 600, ((1, 50),(2, 300),))
         rospy.sleep(0.6)
         
         bus_servo_control.set_servos(self.joints_pub, 300, ((1, 500),(2, 500),))
-        # rospy.sleep(0.3)
+        rospy.sleep(0.3)
+
+        bus_servo_control.set_servos(self.joints_pub, 600, ((1,50),))
+        rospy.sleep(0.4)
+
+        bus_servo_control.set_servos(self.joints_pub, 600, ((1,500),))
+        rospy.sleep(0.4)
+
+        bus_servo_control.set_servos(self.joints_pub, 600, ((1,50),))
+        rospy.sleep(0.4)
+
+        bus_servo_control.set_servos(self.joints_pub, 600, ((1,500),))
+        #rospy.sleep(0.4)
         
         # bus_servo_control.set_servos(self.joints_pub, 400, ((1, 100),))
         # rospy.sleep(0.4)
@@ -87,9 +103,9 @@ class Movement(object):
     
     def approach_cube(self):
         # 夹取的位置
-        self.grasps.grasp_pos.position.x = X
-        self.grasps.grasp_pos.position.y = Y
-        self.grasps.grasp_pos.position.z = Misc.map(Y - 0.15, 0, 0.15, color_z_min, color_z_max)
+        #self.grasps.grasp_pos.position.x = X
+        #self.grasps.grasp_pos.position.y = Y
+        #self.grasps.grasp_pos.position.z = Misc.map(Y - 0.15, 0, 0.15, self.color_z_min, self.color_z_max)
         # 夹取时的俯仰角
         self.grasps.grasp_pos.rotation.r = -175
         
@@ -191,9 +207,9 @@ class Movement(object):
 
     # moving to center on cube? or face?
     # moving to center on cube? or face?
-    def center_target(self,img,center,area_max=900):
+    def center_target(self,img_shape,center,area_max=900):
         (center_x,center_y) = center
-        img_h, img_w = img.shape[:2]
+        img_h, img_w = img_shape
         self.x_pid.SetPoint = img_w / 2.0  # 设定
         self.x_pid.update(center_x)  # 当前
         dx = self.x_pid.output
@@ -226,7 +242,6 @@ class Movement(object):
         target = self.ik.setPitchRanges((0, round(self.y_dis, 4), round(self.z_dis, 4)), -90, -85, -95)
         if target:
             servo_data = target[1]
-            # TODO: handle this joints pub thing
             bus_servo_control.set_servos(self.joints_pub, 20, (
                 (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, self.x_dis)))
     
