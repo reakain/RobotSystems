@@ -74,7 +74,7 @@ class Perception(object):
 
         #= self.get_new_movement()
 
-    def FindColorCubeGrab(self,img,target_color_range,start=True)
+    def FindColorCubeGrab(self,img,target_color_range,start=True):
         frame_mask = self.clean_build_color_mask(img, target_color_range)
         contours = self.get_contour_by_mask(frame_mask)
         contour,area_max = self.get_max_contour(contours)
