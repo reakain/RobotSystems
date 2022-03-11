@@ -132,49 +132,49 @@ class Movement(object):
         target4 = self.ik.setPitchRanges((position.x + retreat.x, position.y + retreat.y, position.z + retreat.z),
                                         rotation.r, -180, 0)
 
-            if target1 and target2 and target3 and target4:
-                if not have_adjust:
-                    servo_data = target1[1]
-                    bus_servo_control.set_servos(self.joints_pub, 1800, (
-                    (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
-                    rospy.sleep(2)
+        if target1 and target2 and target3 and target4:
+            if not have_adjust:
+                servo_data = target1[1]
+                bus_servo_control.set_servos(self.joints_pub, 1800, (
+                (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                rospy.sleep(2)
 
-                    # 第三步：移到目标点
-                    servo_data = target2[1]
-                    bus_servo_control.set_servos(self.joints_pub, 1500, (
-                    (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
-                    rospy.sleep(2)
-
-
-                    #roll_angle = target2[2]
-                    self.gripper_rotation = box_rotation_angle #this uses the max contour stuff 
-
-                    self.x_dis = last_x_dis = target2[1]['servo6']
-                    self.y_dis  = 0
+                # 第三步：移到目标点
+                servo_data = target2[1]
+                bus_servo_control.set_servos(self.joints_pub, 1500, (
+                (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                rospy.sleep(2)
 
 
-                else:
-                    # 第五步: 对齐
-                    bus_servo_control.set_servos(self.joints_pub, 500, ((2, 500 + int(F * self.gripper_rotation)),))
-                    rospy.sleep(0.8)
+                #roll_angle = target2[2]
+                self.gripper_rotation = box_rotation_angle #this uses the max contour stuff 
 
-                    # 第六步：夹取
-                    bus_servo_control.set_servos(self.joints_pub, 500, ((1, self.grasps.grasp_posture - 80),))
-                    rospy.sleep(0.6)
-                    bus_servo_control.set_servos(self.joints_pub, 500, ((1, self.grasps.grasp_posture),))
-                    rospy.sleep(0.8)
+                self.x_dis = last_x_dis = target2[1]['servo6']
+                self.y_dis  = 0
 
-                    # 第七步：抬升物体
-                    if self.grasps.up != 0:
-                        servo_data = target3[1]
-                        bus_servo_control.set_servos(self.joints_pub, 500, (
-                        (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
-                        rospy.sleep(0.6)
 
-                    return target2[2]
             else:
-                rospy.loginfo('pick failed')
-                return False
+                # 第五步: 对齐
+                bus_servo_control.set_servos(self.joints_pub, 500, ((2, 500 + int(F * self.gripper_rotation)),))
+                rospy.sleep(0.8)
+
+                # 第六步：夹取
+                bus_servo_control.set_servos(self.joints_pub, 500, ((1, self.grasps.grasp_posture - 80),))
+                rospy.sleep(0.6)
+                bus_servo_control.set_servos(self.joints_pub, 500, ((1, self.grasps.grasp_posture),))
+                rospy.sleep(0.8)
+
+                # 第七步：抬升物体
+                if self.grasps.up != 0:
+                    servo_data = target3[1]
+                    bus_servo_control.set_servos(self.joints_pub, 500, (
+                    (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5'])))
+                    rospy.sleep(0.6)
+
+                return target2[2]
+        else:
+            rospy.loginfo('pick failed')
+            return False
     
     def look_around(self):
         bus_servo_control.set_servos(self.joints_pub, 200, ((1, 500), (2, 500)))
