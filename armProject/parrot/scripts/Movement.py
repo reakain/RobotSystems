@@ -77,13 +77,13 @@ class Movement(object):
         rospy.sleep(0.3)
 
         bus_servo_control.set_servos(self.joints_pub, 600, ((1,50),))
-        rospy.sleep(0.4)
+        rospy.sleep(0.6)
 
         bus_servo_control.set_servos(self.joints_pub, 600, ((1,500),))
-        rospy.sleep(0.4)
+        rospy.sleep(0.6)
 
         bus_servo_control.set_servos(self.joints_pub, 600, ((1,50),))
-        rospy.sleep(0.4)
+        rospy.sleep(0.6)
 
         bus_servo_control.set_servos(self.joints_pub, 600, ((1,500),))
         #rospy.sleep(0.4)
@@ -203,7 +203,11 @@ class Movement(object):
 
     # Bring cube to center
     def go_home(self):
-        bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 80), (4, 825), (5, 625), (6, 500)))
+        #servo_data = self.ik.setPitchRanges((0, 0.17, 0.3), -65, -180, 0)[1]
+        bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 500), (4, 825), (5, 625), (6, 500)))
+        #bus_servo_control.set_servos(self.joints_pub, 1500, (
+        #    (1, 400), (2, 500), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']),
+        #    (6, servo_data['servo6'])))
 
     # moving to center on cube? or face?
     # moving to center on cube? or face?
