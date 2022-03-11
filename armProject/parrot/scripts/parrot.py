@@ -179,11 +179,11 @@ def run(img):
                 __approachingCube = True
     elif __approachingCube:
         if len(__target_data[0]) != 0:
-            img, center, area_max = perception.FindColorCube(img, __target_data[0])
+            img, center, area_max, box_angle = perception.FindColorCubeGrab(img, __target_data[0])
 
             if center != None:
                 movement.approach_cube()
-                movement.grab_cube(have_adjust = True)
+                movement.grab_cube(box_angle, have_adjust = True)
                 __findingCube = False
                 __goHome = True
     elif __goHome:

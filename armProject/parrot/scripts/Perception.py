@@ -74,6 +74,15 @@ class Perception(object):
 
         #= self.get_new_movement()
 
+    def FindColorCubeGrab(self,img,target_color_range,start=True)
+        frame_mask = self.clean_build_color_mask(img, target_color_range)
+        contours = self.get_contour_by_mask(frame_mask)
+        contour,area_max = self.get_max_contour(contours)
+        if contour is not None and area_max is not None:
+            img_draw,centers = self.get_contour_box(contour,img)
+            angle = self.get_box_rotation_angle(contour,img)
+            return img_draw,centers,area_max,angle
+        return img, None
 
     #def FindSortColorBox(self,img,target_color_range):
 
@@ -185,6 +194,14 @@ class Perception(object):
 
         return img, (center_x, center_y)
 
+    def get_box_rotation_angle(self,contour,img):
+        rect = cv2.minAreaRect(contour)
+        box_rotation_angle = rect[2]
+        if box_rotation_angle > 45:
+            box_rotation_angle =  box_rotation_angle - 90  
+            
+        return box_rotation_angle
+        
 
     # This we'll put in a movement class instead, because fuck combining this stuff
     # def get_new_movement(self,img,x_pid,y_pid,z_pid,x_dis,y_dis,z_dis,(center_x,center_y),area_max):

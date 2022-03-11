@@ -37,14 +37,13 @@ class Movement(object):
 
         self.joints_pub = joints_pub
         
-        self.y_d = 0
+        #self.y_d = 0
         self.grasps=Grasp()
-        self.roll_angle = 0
+        #self.roll_angle = 0
         self.gripper_rotation = 0
       # 木块对角长度一半
         self.square_diagonal = 0.03*math.sin(math.pi/4)
         #F = 1000/240.0
-        #self.adjust_error=False
         #self.last_x_dis=x_dis
 
     # Once we're back at a start point we reset our pids, I think???
@@ -113,19 +112,16 @@ class Movement(object):
 
 
     # Move to grab cube, steal from the sorting "pick" function   
-    def grab_cube(self, have_adjust=False):
-        global roll_angle
-        global adjust, adjust_error, gripper_rotation
+    def grab_cube(self, box_rotation_angle, have_adjust=False):
 
         position = self.grasps.grasp_pos.position
         rotation = self.grasps.grasp_pos.rotation
         approach = self.grasps.grasp_approach
         retreat = self.grasps.grasp_retreat
-        y_d = 0
-        roll_angle = 0
+        #y_d = 0
+        #roll_angle = 0
         square_diagonal = 0.03*math.sin(math.pi/4)
         F = 1000/240.0
-        adjust_error=False
         self.last_x_dis=self.x_dis
 
             # 计算是否能够到达目标位置，如果不能够到达，返回False
@@ -150,8 +146,8 @@ class Movement(object):
                     rospy.sleep(2)
 
 
-                    roll_angle = target2[2]
-                    gripper_rotation = 0 #box_rotation_angle #this uses the max contour stuff 
+                    #roll_angle = target2[2]
+                    self.gripper_rotation = box_rotation_angle #this uses the max contour stuff 
 
                     self.x_dis = last_x_dis = target2[1]['servo6']
                     self.y_dis  = 0
@@ -159,7 +155,7 @@ class Movement(object):
 
                 else:
                     # 第五步: 对齐
-                    bus_servo_control.set_servos(self.joints_pub, 500, ((2, 500 + int(F * gripper_rotation)),))
+                    bus_servo_control.set_servos(self.joints_pub, 500, ((2, 500 + int(F * self.gripper_rotation)),))
                     rospy.sleep(0.8)
 
                     # 第六步：夹取
