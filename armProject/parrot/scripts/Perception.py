@@ -28,7 +28,7 @@ if sys.version_info.major == 2:
 
 # basicallly a static class, so we don't need to run it as a ros node, because we'll always do this before  a move anyway
 class Perception(object):
-
+    
     def __init__(self, size = (320, 240),
                 modelFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/res10_300x300_ssd_iter_140000_fp16.caffemodel",
                 configFile = "/home/ubuntu/armpi_fpv/src/face_detect/scripts/models/deploy.prototxt",
@@ -43,8 +43,15 @@ class Perception(object):
 
         # Color range values
         self.range_rgb = range_rgb
+        self.color_range = rospy.get_param('/lab_config_manager/color_range_list', {})  # get lab range from ros param server
+        self.detect_color = ('red', 'green', 'blue')
         # image size setting
         self.size = size
+
+        # Grasp perception
+        self.mask1 = cv2.imread('/home/ubuntu/armpi_fpv/src/object_sorting/scripts/mask1.jpg', 0)
+        self.mask2 = cv2.imread('/home/ubuntu/armpi_fpv/src/object_sorting/scripts/mask2.jpg', 0)
+        self.rows, self.cols = self.mask1.shape
 
         # Face tracking data and intialization
         self.modelFile = modelFile
@@ -81,8 +88,89 @@ class Perception(object):
         if contour is not None and area_max is not None:
             img_draw,centers = self.get_contour_box(contour,img)
             angle = self.get_box_rotation_angle(contour,img)
+            centerX,centerY = centers
+            if 298 + d_color_map < centerY <= 424 + d_color_map:
+                Y = Misc.map(centerY, 298 + d_color_map, 424 + d_color_map, 0.12, 0.12 - 0.04)
+            elif 198 + d_color_map < centerY <= 298 + d_color_map:
+                Y = Misc.map(centerY, 198 + d_color_map, 298 + d_color_map, 0.12 + 0.04, 0.12)
+            elif 114 + d_color_map < centerY <= 198 + d_color_map:
+                Y = Misc.map(centerY, 114 + d_color_map, 198 + d_color_map, 0.12 + 0.08, 0.12 + 0.04)
+            elif 50 + d_color_map < centerY <= 114 + d_color_map:
+                Y = Misc.map(centerY, 50 + d_color_map, 114 + d_color_map, 0.12 + 0.12, 0.12 + 0.08)
+            elif 0 + d_color_map < centerY <= 50 + d_color_map:
+                Y = Misc.map(centerY, 0 + d_color_map, 50 + d_color_map, 0.12 + 0.16, 0.12 + 0.12)
+            else:
+                Y = 1
+
             return img_draw,centers,area_max,angle
         return img, None
+
+    # 获取roi，防止干扰
+    def getROI(self,rotation_angle):
+        rotate1 = cv2.getRotationMatrix2D((self.rows*0.5, self.cols*0.5), int(rotation_angle), 1)
+        rotate_rotate1 = cv2.warpAffine(self.mask2, rotate1, (self.cols, self.rows))
+        mask_and = cv2.bitwise_and(rotate_rotate1, self.mask1)
+        rotate2 = cv2.getRotationMatrix2D((self.rows*0.5, self.cols*0.5), int(-rotation_angle), 1)
+        rotate_rotate2 = cv2.warpAffine(mask_and, rotate2, (self.cols, self.rows))
+        frame_resize = cv2.resize(rotate_rotate2, (710, 710), interpolation=cv2.INTER_NEAREST)
+        roi = frame_resize[40:280, 184:504]
+        
+        return roi
+
+
+    def ColorSortFuck(self,img,target, rotation_angle, d_color_map = 30):
+        img_copy = img.copy()
+        img_h, img_w = img.shape[:2]
+        
+        frame_resize = cv2.resize(img_copy, self.size, interpolation=cv2.INTER_NEAREST)
+        frame_gray = cv2.cvtColor(frame_resize, cv2.COLOR_BGR2GRAY)
+        frame_lab = cv2.cvtColor(frame_resize, cv2.COLOR_BGR2LAB)  # 将图像转换到LAB空间
+        
+        max_area = 0
+        color_area_max = None
+        areaMaxContour_max = 0
+        roi = self.getROI(rotation_angle)
+        for i in self.color_range:
+            if i in target:
+                if i in self.detect_color:
+                    target_color_range = self.color_range[i]                
+                    frame_mask1 = cv2.inRange(frame_lab, tuple(target_color_range['min']), tuple(target_color_range['max']))  # 对原图像和掩模进行位运算
+                    #mask = cv2.bitwise_and(roi, frame_gray)
+                    frame_mask2 = cv2.bitwise_and(roi, frame_mask1)
+                    eroded = cv2.erode(frame_mask2, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))  #腐蚀
+                    dilated = cv2.dilate(eroded, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))) #膨胀
+                    #cv2.imshow('mask', dilated)
+                    #cv2.waitKey(1)
+                    contours = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2]  # 找出轮廓
+                    areaMaxContour, area_max = self.get_max_contour(contours)  # 找出最大轮廓
+                    if areaMaxContour is not None:
+                        if area_max > max_area and area_max > 100:#找最大面积
+                            max_area = area_max
+                            color_area_max = i
+                            areaMaxContour_max = areaMaxContour
+        if max_area > 100:  # 有找到最大面积
+            rect = cv2.minAreaRect(areaMaxContour_max)
+            box_rotation_angle = rect[2]
+            if box_rotation_angle > 45:
+                box_rotation_angle =  box_rotation_angle - 90        
+            
+            box = np.int0(cv2.boxPoints(rect))   
+            for j in range(4): # 映射到原图大小
+                box[j, 0] = int(Misc.map(box[j, 0], 0, self.size[0], 0, img_w))
+                box[j, 1] = int(Misc.map(box[j, 1], 0, self.size[1], 0, img_h))
+            
+            cv2.drawContours(img, [box], -1, self.range_rgb[color_area_max], 2)
+            
+            centerX = int(Misc.map(((areaMaxContour_max[areaMaxContour_max[:,:,0].argmin()][0])[0] + (areaMaxContour_max[areaMaxContour_max[:,:,0].argmax()][0])[0])/2, 0, self.size[0], 0, img_w))
+            centerY = int(Misc.map((areaMaxContour_max[areaMaxContour_max[:,:,1].argmin()][0])[1], 0, self.size[1], 0, img_h))
+            
+            #cv2.line(img, (0, 430), (640, 430), (0, 255, 255), 2)
+            #cv2.circle(img, (int(centerX), int(centerY)), 5, range_rgb[color_area_max], -1)
+
+
+            return img, (centerX,centerY), max_area, box_rotation_angle
+        return img, None, None, None
+
 
     #def FindSortColorBox(self,img,target_color_range):
 

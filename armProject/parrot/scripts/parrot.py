@@ -199,7 +199,7 @@ def run(img):
                 
     elif __approachingCube:
         if len(__target_data[0]) != 0:
-            img, center, area_max, box_angle = perception.FindColorCubeGrab(img, __target_data[0])
+            img, center, area_max, box_angle = perception.ColorSortFuck(img, __target_data[0], 0)
             img_shape = img.shape[:2]
 
             if center != None:
@@ -235,6 +235,7 @@ def move():
                 movement.clacky_clacky()
                 __clackyClacky = False
             elif __getCube:
+                movement.grasp_hell(center,area_max,box_angle)
                 movement.approach_cube()
                 movement.grab_cube(box_angle, have_adjust = True)
                 __getCube = False

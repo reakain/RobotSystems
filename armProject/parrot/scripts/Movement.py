@@ -49,6 +49,8 @@ class Movement(object):
         if config != {}:    
             self.color_z_min = config['color_z_min']
             self.color_z_max = config['color_z_max']
+        self.Y = 0
+        self.X = 0
 
     # Once we're back at a start point we reset our pids, I think???
     def reset(self):
@@ -61,6 +63,8 @@ class Movement(object):
         self.x_pid.clear()
         self.y_pid.clear()
         self.z_pid.clear()
+        self.Y = 0
+        self.X = 0
 
     # Do the grabber clacky clacky, can probably use this to drop the cube too lolol
     def clacky_clacky(self):
@@ -101,11 +105,52 @@ class Movement(object):
         rospy.sleep(1)
 
     
+    def grasp_hell(self, centers, max_area, box_rotation_angle, d_color_map=30, color_y_adjust=400, d_color_y=20):
+        centerX,centerY = centers
+  
+        if 298 + d_color_map < centerY <= 424 + d_color_map:
+            self.Y = Misc.map(centerY, 298 + d_color_map, 424 + d_color_map, 0.12, 0.12 - 0.04)
+        elif 198 + d_color_map < centerY <= 298 + d_color_map:
+            self.Y = Misc.map(centerY, 198 + d_color_map, 298 + d_color_map, 0.12 + 0.04, 0.12)
+        elif 114 + d_color_map < centerY <= 198 + d_color_map:
+            self.Y = Misc.map(centerY, 114 + d_color_map, 198 + d_color_map, 0.12 + 0.08, 0.12 + 0.04)
+        elif 50 + d_color_map < centerY <= 114 + d_color_map:
+            self.Y = Misc.map(centerY, 50 + d_color_map, 114 + d_color_map, 0.12 + 0.12, 0.12 + 0.08)
+        elif 0 + d_color_map < centerY <= 50 + d_color_map:
+            self.Y = Misc.map(centerY, 0 + d_color_map, 50 + d_color_map, 0.12 + 0.16, 0.12 + 0.12)
+        else:
+            self.Y = 1
+
+        self.x_pid.SetPoint = 340 #设定           
+        self.x_pid.update(centerX) #当前
+        dx = self.x_pid.output
+        self.x_dis += dx #输出  
+        
+        self.x_dis = 0 if self.x_dis < 0 else self.x_dis          
+        self.x_dis = 1000 if self.x_dis > 1000 else self.x_dis
+
+        self.y_pid.SetPoint = color_y_adjust
+        centerY += abs(Misc.map(70*math.sin(math.pi/4)/2, 0, self.size[0], 0, img_w)*math.sin(math.radians(abs(self.gripper_rotation) + 45))) + 65*math.sin(math.radians(abs(self.roll_angle)))
+        if self.Y < 0.12 + 0.04:
+            centerY += d_color_y 
+        if 0 < centerY - color_y_adjust <= 5:
+            centerY = color_y_adjust
+        self.y_pid.update(centerY)
+
+        dy = self.y_pid.output
+        self.y_dis += dy
+        self.y_dis = 0.1 if self.y_dis > 0.1 else self.y_dis
+        self.y_dis = -0.1 if self.y_dis < -0.1 else self.y_dis
+        rotation_angle = 240 * (self.x_dis - 500)/1000.0
+        self.X = round(-self.Y * math.tan(math.radians(rotation_angle)), 4)
+
+        
+
     def approach_cube(self):
         # 夹取的位置
-        #self.grasps.grasp_pos.position.x = X
-        #self.grasps.grasp_pos.position.y = Y
-        #self.grasps.grasp_pos.position.z = Misc.map(Y - 0.15, 0, 0.15, self.color_z_min, self.color_z_max)
+        self.grasps.grasp_pos.position.x = self.X
+        self.grasps.grasp_pos.position.y = self.Y
+        self.grasps.grasp_pos.position.z = Misc.map(self.Y - 0.15, 0, 0.15, self.color_z_min, self.color_z_max)
         # 夹取时的俯仰角
         self.grasps.grasp_pos.rotation.r = -175
         
@@ -162,7 +207,7 @@ class Movement(object):
                 rospy.sleep(2)
 
 
-                #roll_angle = target2[2]
+                self.roll_angle = target2[2]
                 self.gripper_rotation = box_rotation_angle #this uses the max contour stuff 
 
                 self.x_dis = last_x_dis = target2[1]['servo6']
@@ -204,7 +249,7 @@ class Movement(object):
     # Bring cube to center
     def go_home(self):
         #servo_data = self.ik.setPitchRanges((0, 0.17, 0.3), -65, -180, 0)[1]
-        bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 500), (4, 825), (5, 625), (6, 500)))
+        bus_servo_control.set_servos(self.joints_pub, 1500, ((1, 75), (2, 500), (3, 300), (4, 825), (5, 625), (6, 500)))
         #bus_servo_control.set_servos(self.joints_pub, 1500, (
         #    (1, 400), (2, 500), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']),
         #    (6, servo_data['servo6'])))

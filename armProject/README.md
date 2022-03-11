@@ -4,16 +4,25 @@
 
  1. git clone repo to home directory
  2. Run setup shell script
-    `cd ~/RobotSystems/armProject/setup.sh`
+    ```
+    cd ~/RobotSystems/armProject/setup.sh
+    ```
+ 4. Wait for it to beep to reset everything
  3. Call the parrot service to start
-    `rosservice call /parrot/enter "{}"`
+    ```
+    rosservice call /parrot/enter "{}"
+    ```
  4. Set Running
-    `rosservice call /parrot/set_running "data: true"`
+    ```
+    rosservice call /parrot/set_running "data: true"
+    ```
  5. Set Target
-    `rosservice call /parrot/set_target "color:
-- 'red'
-- 'green'
-- 'blue'"`
+    ```
+    rosservice call /parrot/set_target "color:
+    - 'red'
+    - 'green'
+    - 'blue'"
+    ```
 
 
 
