@@ -62,6 +62,7 @@ servo6_pulse = 500
 start_greet = False
 action_finish = True
 __haveCube = False
+__startSearch = False
 
 mask1 = cv2.imread('/home/ubuntu/armpi_fpv/src/object_sorting/scripts/mask1.jpg', 0)
 mask2 = cv2.imread('/home/ubuntu/armpi_fpv/src/object_sorting/scripts/mask2.jpg', 0)
@@ -169,6 +170,7 @@ def reset():
     global start_greet
     global servo6_pulse
     global action_finish 
+    global __startSearch
 
     with lock:
         X = 0
@@ -194,6 +196,7 @@ def reset():
         have_move = False
         servo6_pulse = 500
         start_greet = False
+        __startSearch = False
         
         move_state = 1
         turn_off_rgb()
@@ -485,6 +488,7 @@ def move():
     global x_adjust
     global move_state  
     global __haveCube
+    global __startSearch
     global have_move
     global start_greet
     global action_finish 
@@ -535,9 +539,15 @@ def move():
                         continue
                     move_state = 3
                     __haveCube = True
+                    __startSearch = True
                 elif not adjust and move_state == 3:
                     if result:
-                        if start_greet:
+                        if __startSearch:
+                            servo_data = ik.setPitchRanges((0, 0.17, 0.3), -65, -180, 0)[1]
+                            bus_servo_control.set_servos(joints_pub, 1500, (
+                                (1, 400), (2, 500), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']),
+                                (6, servo_data['servo6'])))
+                        elif start_greet:
                             start_greet = False                
                             action_finish = False
                             bus_servo_control.set_servos(joints_pub, 300, ((2, 300),))
