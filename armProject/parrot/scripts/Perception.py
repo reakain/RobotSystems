@@ -164,8 +164,8 @@ class Perception(object):
             centerX = int(Misc.map(((areaMaxContour_max[areaMaxContour_max[:,:,0].argmin()][0])[0] + (areaMaxContour_max[areaMaxContour_max[:,:,0].argmax()][0])[0])/2, 0, self.size[0], 0, img_w))
             centerY = int(Misc.map((areaMaxContour_max[areaMaxContour_max[:,:,1].argmin()][0])[1], 0, self.size[1], 0, img_h))
             
-            #cv2.line(img, (0, 430), (640, 430), (0, 255, 255), 2)
-            #cv2.circle(img, (int(centerX), int(centerY)), 5, range_rgb[color_area_max], -1)
+            cv2.line(img, (0, 430), (640, 430), (0, 255, 255), 2)
+            cv2.circle(img, (int(centerX), int(centerY)), 5, range_rgb[color_area_max], -1)
 
 
             return img, (centerX,centerY), max_area, box_rotation_angle
