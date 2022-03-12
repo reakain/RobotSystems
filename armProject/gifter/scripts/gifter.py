@@ -950,7 +950,7 @@ def tag_sort(img, target):
 def find_face(img):
     global frame_pass
     global start_greet
-    global centerX, centerY
+    global action_finish
 
     img_copy = img.copy()
     img_h, img_w = img.shape[:2]
