@@ -10,15 +10,15 @@
  4. Wait for it to beep to reset everything
  3. Call the parrot service to start
     ```
-    rosservice call /parrot/enter "{}"
+    rosservice call /gifter/enter "{}"
     ```
  4. Set Running
     ```
-    rosservice call /parrot/set_running "data: true"
+    rosservice call /gifter/set_running "data: true"
     ```
  5. Set Target
     ```
-    rosservice call /parrot/set_target "color:
+    rosservice call /gifter/set_target "color:
     - 'red'
     - 'green'
     - 'blue'"
@@ -28,12 +28,13 @@
 
 ## Order of Operations
 
- - Look for face
- - Clacky-clack the grabbers at the face
  - Look for cube
- - Take cube (or clacky clack again at time out?, extra work)
- - Pull cube to self
+ - Grab cube
+ - Lift cube
+ - Look for Person
+ - Wiggle at person
  - Drop cube!
+ - Clacky clacky
  - Repeat from start
 
 
