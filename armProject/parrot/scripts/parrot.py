@@ -186,7 +186,7 @@ def run(img):
 
     elif __findingCube:
         if len(__target_data[0]) != 0:
-            img, center, area_max = perception.FindColorCube(img, __target_data[0])
+            img, center, area_max, box_angle = perception.ColorSortFuck(img, __target_data[0], 0)
             img_shape = img.shape[:2]
 
             if center != None:

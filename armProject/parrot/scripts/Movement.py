@@ -39,7 +39,7 @@ class Movement(object):
         
         #self.y_d = 0
         self.grasps=Grasp()
-        #self.roll_angle = 0
+        self.roll_angle = 0
         self.gripper_rotation = 0
       # 木块对角长度一半
         self.square_diagonal = 0.03*math.sin(math.pi/4)
@@ -210,7 +210,7 @@ class Movement(object):
                 self.roll_angle = target2[2]
                 self.gripper_rotation = box_rotation_angle #this uses the max contour stuff 
 
-                self.x_dis = last_x_dis = target2[1]['servo6']
+                self.x_dis = self.last_x_dis = target2[1]['servo6']
                 self.y_dis  = 0
 
 
@@ -238,11 +238,11 @@ class Movement(object):
             return False
     
     def look_around(self):
-        bus_servo_control.set_servos(self.joints_pub, 200, ((1, 500), (2, 500)))
-        rospy.sleep(0.2)
+        #bus_servo_control.set_servos(self.joints_pub, 200, ((1, 500), (2, 500)))
+        #rospy.sleep(0.2)
         if self.x_dis > 875 or self.x_dis < 125:
             self.d_pulse = -self.d_pulse
-        bus_servo_control.set_servos(self.joints_pub, 50, ((6, self.x_dis),))           
+        bus_servo_control.set_servos(self.joints_pub, 100, ((6, self.x_dis),))           
         self.x_dis += self.d_pulse 
         rospy.sleep(0.05) 
 
