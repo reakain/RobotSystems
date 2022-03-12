@@ -545,7 +545,7 @@ def move():
                         if __startSearch:
                             servo_data = ik.setPitchRanges((0, 0.17, 0.3), -65, -180, 0)[1]
                             bus_servo_control.set_servos(joints_pub, 1500, (
-                                (1, 400), (2, 500), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']),
+                                (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']),
                                 (6, servo_data['servo6'])))
                             __startSearch = False
                             rosply.sleep(.5)
