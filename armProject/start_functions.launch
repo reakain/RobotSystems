@@ -3,6 +3,7 @@
   <node name="object_tracking" pkg="object_tracking" type="tracking.py" required="true" output="screen" />
   <node name="object_pallezting" pkg="object_pallezting" type="pallezting.py" required="true" output="screen" />
   <node name="parrot" pkg="parrot" type="parrot.py" required="true" output="screen" />
+  <node name="gifter" pkg="gifter" type="gifter.py" required="true" output="screen" />
   <node name="face_detect" pkg="face_detect" type="face.py" required="true" output="screen" />
 
   <node name="in" pkg="warehouse" type="in.py" required="true" output="screen" />

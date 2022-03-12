@@ -1,6 +1,6 @@
 #!/bin/bash
-echo "Copying parrot code to ROS workspace"
-cp -R ~/RobotSystems/armProject/parrot ~/armpi_fpv/src/
+echo "Copying gifter code to ROS workspace"
+cp -R ~/RobotSystems/armProject/gifter ~/armpi_fpv/src/
 echo "Copying launch file to armpi_fpv_bringup"
 cp ~/RobotSystems/armProject/start_functions.launch ~/armpi_fpv/src/armpi_fpv_bringup/launch/
 echo "Building ROS workspace"
