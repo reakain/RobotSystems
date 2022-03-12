@@ -1,4 +1,4 @@
-# Final Project - Shoulder Parrot
+# Final Project - Give You a Gift
 
 ## How to set up
 
@@ -37,5 +37,7 @@
  - Clacky clacky
  - Repeat from start
 
+## Old
 
+Parrot folder is old code from previous iteration attempt
 
