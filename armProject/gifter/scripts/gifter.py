@@ -61,6 +61,7 @@ have_move = False
 servo6_pulse = 500
 start_greet = False
 action_finish = True
+frame_pass = True
 __haveCube = False
 __startSearch = False
 
@@ -950,7 +951,9 @@ def tag_sort(img, target):
 def find_face(img):
     global frame_pass
     global start_greet
-    global action_finish
+    #global action_finish
+    #global net
+    #global conf_threshold
 
     img_copy = img.copy()
     img_h, img_w = img.shape[:2]
@@ -983,7 +986,7 @@ def run(img):
     global adjust_error
     global count_tag_timeout
     global count_adjust_timeout
-    global __haveCube
+    #global __haveCube
     
     if not __haveCube:
         if len(__target_data[1]) != 0:
