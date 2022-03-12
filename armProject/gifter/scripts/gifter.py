@@ -61,6 +61,7 @@ have_move = False
 servo6_pulse = 500
 start_greet = False
 action_finish = True
+__haveCube = False
 
 mask1 = cv2.imread('/home/ubuntu/armpi_fpv/src/object_sorting/scripts/mask1.jpg', 0)
 mask2 = cv2.imread('/home/ubuntu/armpi_fpv/src/object_sorting/scripts/mask2.jpg', 0)
@@ -150,6 +151,7 @@ def reset():
     global adjust    
     global approach
     global move_state
+    global __haveCube
     global start_move
     global current_tag
     global detect_color
@@ -162,7 +164,12 @@ def reset():
     global last_x_dis, last_y_dis
     global rotation_angle, last_box_rotation_angle    
     global count, count2, count3, count_timeout, count_adjust_timeout, count_d, count_tag_timeout
-    
+    global d_pulse
+    global have_move       
+    global start_greet
+    global servo6_pulse
+    global action_finish 
+
     with lock:
         X = 0
         Y = 0
@@ -182,6 +189,11 @@ def reset():
         approach = False
         start_move = False
         adjust_error = False
+        __haveCube = False
+        d_pulse = 5
+        have_move = False
+        servo6_pulse = 500
+        start_greet = False
         
         move_state = 1
         turn_off_rgb()
@@ -471,7 +483,12 @@ def move():
     global grasps
     global approach
     global x_adjust
-    global move_state    
+    global move_state  
+    global __haveCube
+    global have_move
+    global start_greet
+    global action_finish 
+    global d_pulse, servo6_pulse   
     
     while True:
         if __isRunning:
@@ -515,9 +532,54 @@ def move():
                     if not result:
                         reset()
                         initMove(delay=False)
+                        continue
                     move_state = 3
+                    __haveCube = True
                 elif not adjust and move_state == 3:
                     if result:
+                        if start_greet:
+                            start_greet = False                
+                            action_finish = False
+                            bus_servo_control.set_servos(joints_pub, 300, ((2, 300),))
+                            rospy.sleep(0.3)
+
+                            bus_servo_control.set_servos(joints_pub, 600, ((2, 700),))
+                            rospy.sleep(0.6)
+                            
+                            bus_servo_control.set_servos(joints_pub, 600, ((2, 300),))
+                            rospy.sleep(0.6)
+                            
+                            bus_servo_control.set_servos(joints_pub, 300, ((2, 500),))
+                            rospy.sleep(0.3)
+                            
+                            bus_servo_control.set_servos(joints_pub, 400, ((1, 200),))
+                            rospy.sleep(0.4)
+
+                            bus_servo_control.set_servos(joints_pub, 400, ((1, 500),))
+                            rospy.sleep(0.4)
+                            
+                            bus_servo_control.set_servos(joints_pub, 400, ((1, 200),))
+                            rospy.sleep(0.4)
+                            
+                            bus_servo_control.set_servos(joints_pub, 400, ((1, 500),))
+                            rospy.sleep(1)
+                            
+                            action_finish = True
+                            
+                            have_move = True
+                            initMove(delay=False)
+                            reset()
+                        else:
+                            if have_move:
+                                have_move = False
+                                bus_servo_control.set_servos(joints_pub, 200, ((1, 500), (2, 500)))
+                                rospy.sleep(0.2)
+                            if servo6_pulse > 875 or servo6_pulse < 125:
+                                d_pulse = -d_pulse
+                            bus_servo_control.set_servos(joints_pub, 50, ((6, servo6_pulse),))           
+                            servo6_pulse += d_pulse
+
+                            rospy.sleep(0.05)  
                         # if state == 'color':
                         #     position = place_position[pick_color]
                         # elif state == 'tag':
@@ -542,8 +604,8 @@ def move():
                         # places.pre_grasp_posture = 450                        
                         # place(places)
                     
-                    initMove(delay=False)
-                    reset()
+                    #initMove(delay=False)
+                    #reset()
                 else:
                     rospy.sleep(0.001)
             else:
@@ -873,68 +935,104 @@ def tag_sort(img, target):
         
     return img
 
+
+def find_face(img):
+    global frame_pass
+    global start_greet
+    global centerX, centerY
+
+    img_copy = img.copy()
+    img_h, img_w = img.shape[:2]
+    
+    if frame_pass:
+        frame_pass = False
+        return img
+    
+    frame_pass = True
+
+    blob = cv2.dnn.blobFromImage(img_copy, 1, (150, 150), [104, 117, 123], False, False)
+    net.setInput(blob)
+    detections = net.forward() #计算识别
+    for i in range(detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > conf_threshold:
+            #识别到的人了的各个坐标转换会未缩放前的坐标
+            x1 = int(detections[0, 0, i, 3] * img_w)
+            y1 = int(detections[0, 0, i, 4] * img_h)
+            x2 = int(detections[0, 0, i, 5] * img_w)
+            y2 = int(detections[0, 0, i, 6] * img_h)             
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2, 8) #将识别到的人脸框出
+            centerX = int((x1 + x2)/2)
+            if action_finish and abs(centerX - img_w/2) < 100:
+                start_greet = True       
+    return img
+
 def run(img):
     global current_tag
     global adjust_error
     global count_tag_timeout
     global count_adjust_timeout
+    global __haveCube
     
-    if len(__target_data[1]) != 0:
-        apriltagDetect(img) # apriltag检测
-        
-    # 选取策略，优先tag, 夹取超时处理
-    if 'tag1' in __target_data[1] and 'tag1' in current_tag:
-        if tag1[1] != -1:
-            count_adjust_timeout = 0
-            img = tag_sort(img, tag1)
-        else:
-            if adjust:
-                count_adjust_timeout += 1
-                if count_adjust_timeout > 50:
-                    count_adjust_timeout = 0
-                    adjust_error = True
+    if not __haveCube:
+        if len(__target_data[1]) != 0:
+            apriltagDetect(img) # apriltag检测
+            
+        # 选取策略，优先tag, 夹取超时处理
+        if 'tag1' in __target_data[1] and 'tag1' in current_tag:
+            if tag1[1] != -1:
+                count_adjust_timeout = 0
+                img = tag_sort(img, tag1)
             else:
-                count_tag_timeout += 1
-                if count_tag_timeout > 3:
-                    count_tag_timeout = 0
-                    if current_tag != 'tag1':
-                        current_tag.remove('tag1')
-    elif 'tag2' in __target_data[1] and 'tag2' in current_tag:
-        if tag2[1] != -1:
-            count_adjust_timeout = 0
-            img = tag_sort(img, tag2)
-        else:
-            if adjust:
-                count_adjust_timeout += 1
-                if count_adjust_timeout > 50:
-                    count_adjust_timeout = 0
-                    adjust_error = True
+                if adjust:
+                    count_adjust_timeout += 1
+                    if count_adjust_timeout > 50:
+                        count_adjust_timeout = 0
+                        adjust_error = True
+                else:
+                    count_tag_timeout += 1
+                    if count_tag_timeout > 3:
+                        count_tag_timeout = 0
+                        if current_tag != 'tag1':
+                            current_tag.remove('tag1')
+        elif 'tag2' in __target_data[1] and 'tag2' in current_tag:
+            if tag2[1] != -1:
+                count_adjust_timeout = 0
+                img = tag_sort(img, tag2)
             else:
-                count_tag_timeout += 1
-                if count_tag_timeout > 3:
-                    count_tag_timeout = 0
-                    if current_tag != 'tag2':
-                        current_tag.remove('tag2')
-    elif 'tag3' in __target_data[1] and 'tag3' in current_tag:
-        if tag3[1] != -1:
-            count_adjust_timeout = 0
-            img = tag_sort(img, tag3)        
-        else:
-            if adjust:
-                count_adjust_timeout += 1
-                if count_adjust_timeout > 50:
-                    count_adjust_timeout = 0
-                    adjust_error = True
+                if adjust:
+                    count_adjust_timeout += 1
+                    if count_adjust_timeout > 50:
+                        count_adjust_timeout = 0
+                        adjust_error = True
+                else:
+                    count_tag_timeout += 1
+                    if count_tag_timeout > 3:
+                        count_tag_timeout = 0
+                        if current_tag != 'tag2':
+                            current_tag.remove('tag2')
+        elif 'tag3' in __target_data[1] and 'tag3' in current_tag:
+            if tag3[1] != -1:
+                count_adjust_timeout = 0
+                img = tag_sort(img, tag3)        
             else:
-                count_tag_timeout += 1
-                if count_tag_timeout > 3:
-                    count_tag_timeout = 0
-                    if current_tag != 'tag3':
-                        current_tag.remove('tag3')
-    elif len(__target_data[0]) != 0:
-        img = color_sort(img, __target_data[0])
+                if adjust:
+                    count_adjust_timeout += 1
+                    if count_adjust_timeout > 50:
+                        count_adjust_timeout = 0
+                        adjust_error = True
+                else:
+                    count_tag_timeout += 1
+                    if count_tag_timeout > 3:
+                        count_tag_timeout = 0
+                        if current_tag != 'tag3':
+                            current_tag.remove('tag3')
+        elif len(__target_data[0]) != 0:
+            img = color_sort(img, __target_data[0])
+        else:
+            current_tag = ['tag1', 'tag2', 'tag3']
     else:
-        current_tag = ['tag1', 'tag2', 'tag3']
+        img = find_face(img)
     img_h, img_w = img.shape[:2]
     cv2.line(img, (int(img_w/2 - 10), int(img_h/2)), (int(img_w/2 + 10), int(img_h/2)), (0, 255, 255), 2)
     cv2.line(img, (int(img_w/2), int(img_h/2 - 10)), (int(img_w/2), int(img_h/2 + 10)), (0, 255, 255), 2)
