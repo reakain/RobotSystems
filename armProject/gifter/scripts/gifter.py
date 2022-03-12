@@ -383,94 +383,6 @@ def pick(grasps, have_adjust=False):
         rospy.loginfo('pick failed')
         return False
 
-def place(places):
-    position = places.grasp_pos.position
-    rotation = places.grasp_pos.rotation
-    approach = places.grasp_approach
-    retreat = places.grasp_retreat
-    
-    # 计算是否能够到达目标位置，如果不能够到达，返回False
-    target1 = ik.setPitchRanges((position.x + approach.x, position.y + approach.y, position.z + approach.z), rotation.r, -180, 0)
-    target2 = ik.setPitchRanges((position.x, position.y, position.z), rotation.r, -180, 0)
-    target3 = ik.setPitchRanges((position.x, position.y, position.z + places.up), rotation.r, -180, 0)
-    target4 = ik.setPitchRanges((position.x + retreat.x, position.y + retreat.y, position.z + retreat.z), rotation.r, -180, 0)
-    
-    if not __isRunning:
-        return False
-    if target1 and target2 and target3 and target4:
-        # 第一步：云台转到朝向目标方向
-        servo_data = target1[1]
-        bus_servo_control.set_servos(joints_pub, 1000, ((1, places.pre_grasp_posture), (2, int(F*rotation.y)), (3, 80), (4, 825), (5, 625), (6, servo_data['servo6'])))
-        rospy.sleep(1)
-        if not __isRunning:
-            bus_servo_control.set_servos(joints_pub, 500, ((1, places.grasp_posture), ))               
-            rospy.sleep(0.5)            
-            return False
-        
-        # 第二步：移到接近点
-        bus_servo_control.set_servos(joints_pub, 1500, ((3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, servo_data['servo6'])))      
-        rospy.sleep(1.6)
-        if not __isRunning:
-            bus_servo_control.set_servos(joints_pub, 500, ((1, places.grasp_posture), ))               
-            rospy.sleep(0.5)             
-            return False
-        
-        # 第三步：移到目标点
-        servo_data = target2[1]
-        bus_servo_control.set_servos(joints_pub, 500, ((3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, servo_data['servo6']))) 
-        rospy.sleep(1)
-        if not __isRunning:
-            bus_servo_control.set_servos(joints_pub, 500, ((1, places.grasp_posture), ))               
-            rospy.sleep(0.5)             
-            servo_data = target4[1]
-            bus_servo_control.set_servos(joints_pub, 1000, ((1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, servo_data['servo6'])))       
-            rospy.sleep(1)              
-            return False
-        
-        # 第四步：抬升
-        if places.up != 0:
-            servo_data = target3[1]
-            bus_servo_control.set_servos(joints_pub, 800, ((3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, servo_data['servo6'])))
-            rospy.sleep(0.8)
-        if not __isRunning:
-            bus_servo_control.set_servos(joints_pub, 500, ((1, places.grasp_posture), ))               
-            rospy.sleep(0.5)             
-            servo_data = target4[1]
-            bus_servo_control.set_servos(joints_pub, 1000, ((1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, servo_data['servo6'])))       
-            rospy.sleep(1)              
-            return False
-
-        # 第五步：放置
-        bus_servo_control.set_servos(joints_pub, 100, ((1, places.pre_grasp_posture - 20), ))         
-        rospy.sleep(0.2)        
-        bus_servo_control.set_servos(joints_pub, 500, ((1, places.grasp_posture), ))         
-        rospy.sleep(1)
-        if not __isRunning:
-            servo_data = target4[1]
-            bus_servo_control.set_servos(joints_pub, 1000, ((1, 200), (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, servo_data['servo6'])))       
-            rospy.sleep(1)              
-            return False
-        
-        # 第六步：移到撤离点
-        servo_data = target4[1]
-        if servo_data != target3[1]:
-            bus_servo_control.set_servos(joints_pub, 600, ((3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']), (6, servo_data['servo6'])))
-            rospy.sleep(0.6)
-            if not __isRunning:
-                return False
-            
-        # 第七步：移到稳定点
-        servo_data = target1[1]
-        bus_servo_control.set_servos(joints_pub, 1000, ((2, 500), (3, 80), (4, 825), (5, 625), (6, servo_data['servo6'])))
-        rospy.sleep(1)
-        if not __isRunning:
-            return False
-        
-        return True
-    else:
-        rospy.loginfo('place failed')
-        return False
-
 ##################################################
 # 放置坐标x, y, z(m)
 place_position = {'red':  [-0.18,  0.057,   0.01],
@@ -579,7 +491,8 @@ def move():
                         action_finish = True
                         
                         have_move = True
-                        initMove(delay=False)
+                        #initMove(delay=False)
+                        bus_servo_control.set_servos(joints_pub, 1500, ((1, 75), (2, 500), (3, 80), (4, 825), (5, 625), (6, 500)))
                         reset()
                     else:
                         if have_move:
@@ -592,32 +505,7 @@ def move():
                         servo6_pulse += d_pulse
 
                         rospy.sleep(0.05)  
-                        # if state == 'color':
-                        #     position = place_position[pick_color]
-                        # elif state == 'tag':
-                        #     position = place_position[current_tag]
-                        # if position[0] < 0:
-                        #     yaw = int(120 - (90 + math.degrees(math.atan2(position[0], position[1]))))
-                        # else:
-                        #     yaw = int(120 + (90 - math.degrees(math.atan2(position[0], position[1]))))
-                        
-                        # places = Grasp()                    
-                        # places.grasp_pos.position.x = position[0]
-                        # places.grasp_pos.position.y = position[1]
-                        # places.grasp_pos.position.z = position[2]
-                        # places.grasp_pos.rotation.r = -180
-                        # places.grasp_pos.rotation.y = yaw
-                        
-                        # places.up = 0.0
-                        # places.grasp_approach.z = 0.02
-                        # places.grasp_retreat.z = 0.04
-                        
-                        # places.grasp_posture = 75
-                        # places.pre_grasp_posture = 450                        
-                        # place(places)
-                    
-                    #initMove(delay=False)
-                    #reset()
+
                 else:
                     rospy.sleep(0.001)
             else:
