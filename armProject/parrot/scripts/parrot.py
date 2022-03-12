@@ -179,7 +179,8 @@ def run(img):
             #movement.center_target(img,center)
             #movement.clacky_clacky()
             __findingFace = False
-            __findingCube = True
+            #__findingCube = True
+            __approachingCube = True
         else:
             #movement.look_around()
             __sweepArea = True
