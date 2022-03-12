@@ -536,62 +536,61 @@ def move():
                     if not result:
                         reset()
                         initMove(delay=False)
-                        continue
-                    move_state = 3
-                    __haveCube = True
-                    __startSearch = True
+                    else:
+                        move_state = 3
+                        __haveCube = True
+                        __startSearch = True
                 elif not adjust and move_state == 3:
-                    if result:
-                        if __startSearch:
-                            servo_data = ik.setPitchRanges((0, 0.17, 0.3), -65, -180, 0)[1]
-                            bus_servo_control.set_servos(joints_pub, 1500, (
-                                (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']),
-                                (6, servo_data['servo6'])))
-                            __startSearch = False
-                            rosply.sleep(.5)
-                        elif start_greet:
-                            start_greet = False                
-                            action_finish = False
-                            bus_servo_control.set_servos(joints_pub, 300, ((2, 300),))
-                            rospy.sleep(0.3)
+                    if __startSearch:
+                        servo_data = ik.setPitchRanges((0, 0.17, 0.3), -65, -180, 0)[1]
+                        bus_servo_control.set_servos(joints_pub, 1500, (
+                            (3, servo_data['servo3']), (4, servo_data['servo4']), (5, servo_data['servo5']),
+                            (6, servo_data['servo6'])))
+                        __startSearch = False
+                        rosply.sleep(.5)
+                    elif start_greet:
+                        start_greet = False                
+                        action_finish = False
+                        bus_servo_control.set_servos(joints_pub, 300, ((2, 300),))
+                        rospy.sleep(0.3)
 
-                            bus_servo_control.set_servos(joints_pub, 600, ((2, 700),))
-                            rospy.sleep(0.6)
-                            
-                            bus_servo_control.set_servos(joints_pub, 600, ((2, 300),))
-                            rospy.sleep(0.6)
-                            
-                            bus_servo_control.set_servos(joints_pub, 300, ((2, 500),))
-                            rospy.sleep(0.3)
-                            
-                            bus_servo_control.set_servos(joints_pub, 400, ((1, 200),))
-                            rospy.sleep(0.4)
+                        bus_servo_control.set_servos(joints_pub, 600, ((2, 700),))
+                        rospy.sleep(0.6)
+                        
+                        bus_servo_control.set_servos(joints_pub, 600, ((2, 300),))
+                        rospy.sleep(0.6)
+                        
+                        bus_servo_control.set_servos(joints_pub, 300, ((2, 500),))
+                        rospy.sleep(0.3)
+                        
+                        bus_servo_control.set_servos(joints_pub, 400, ((1, 200),))
+                        rospy.sleep(0.4)
 
-                            bus_servo_control.set_servos(joints_pub, 400, ((1, 500),))
-                            rospy.sleep(0.4)
-                            
-                            bus_servo_control.set_servos(joints_pub, 400, ((1, 200),))
-                            rospy.sleep(0.4)
-                            
-                            bus_servo_control.set_servos(joints_pub, 400, ((1, 500),))
-                            rospy.sleep(1)
-                            
-                            action_finish = True
-                            
-                            have_move = True
-                            initMove(delay=False)
-                            reset()
-                        else:
-                            if have_move:
-                                have_move = False
-                                bus_servo_control.set_servos(joints_pub, 200, ((1, 500), (2, 500)))
-                                rospy.sleep(0.2)
-                            if servo6_pulse > 875 or servo6_pulse < 125:
-                                d_pulse = -d_pulse
-                            bus_servo_control.set_servos(joints_pub, 50, ((6, servo6_pulse),))           
-                            servo6_pulse += d_pulse
+                        bus_servo_control.set_servos(joints_pub, 400, ((1, 500),))
+                        rospy.sleep(0.4)
+                        
+                        bus_servo_control.set_servos(joints_pub, 400, ((1, 200),))
+                        rospy.sleep(0.4)
+                        
+                        bus_servo_control.set_servos(joints_pub, 400, ((1, 500),))
+                        rospy.sleep(1)
+                        
+                        action_finish = True
+                        
+                        have_move = True
+                        initMove(delay=False)
+                        reset()
+                    else:
+                        if have_move:
+                            have_move = False
+                            bus_servo_control.set_servos(joints_pub, 200, ((1, 500), (2, 500)))
+                            rospy.sleep(0.2)
+                        if servo6_pulse > 875 or servo6_pulse < 125:
+                            d_pulse = -d_pulse
+                        bus_servo_control.set_servos(joints_pub, 50, ((6, servo6_pulse),))           
+                        servo6_pulse += d_pulse
 
-                            rospy.sleep(0.05)  
+                        rospy.sleep(0.05)  
                         # if state == 'color':
                         #     position = place_position[pick_color]
                         # elif state == 'tag':
@@ -974,8 +973,8 @@ def find_face(img):
             x2 = int(detections[0, 0, i, 5] * img_w)
             y2 = int(detections[0, 0, i, 6] * img_h)             
             cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2, 8) #将识别到的人脸框出
-            centerX = int((x1 + x2)/2)
-            if action_finish and abs(centerX - img_w/2) < 100:
+            centerx = int((x1 + x2)/2)
+            if action_finish and abs(centerx - img_w/2) < 100:
                 start_greet = True       
     return img
 
