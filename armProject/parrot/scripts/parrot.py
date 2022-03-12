@@ -231,7 +231,7 @@ def move():
             if __sweepArea:
                 movement.look_around()
             if __centerTarget:
-                movement.center_target(img_shape,center,area_max)
+                #movement.center_target(img_shape,center,area_max)
             if __clackyClacky:
                 movement.clacky_clacky()
                 __clackyClacky = False
